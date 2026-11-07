@@ -14,7 +14,7 @@
     "화합물 목록 · SAR": "Compounds · SAR",
     "위험 신호": "Alerts",
     "3D · 도킹": "3D · Docking",
-    "준비 중": "coming soon",
+    "준비 중": "Coming soon",
     "도구": "Tools",
     "물성": "Properties",
     "도구 목록으로": "Back to tool list",
@@ -276,6 +276,26 @@
     "pKa 입력칸으로 이동": "Jump to pKa field", "화합물 목록 탭 열기": "Open Compounds tab",
     "위험 신호 탭 열기": "Open Alerts tab", "구조 그리기 탭 열기": "Open Draw tab",
     "저장된 화합물 ": "Saved compounds: ", "도구 1": "Tool 1", "개 · ": " · ", "편집기": "editor", "기본값으로": "defaults",
+
+    // ---- 시작 화면 ----
+    "여섯 도구가 같은 화합물 목록을 함께 씁니다. 한 곳에서 저장하면 나머지에서 바로 읽혀요.":
+      "Six tools that share one compound list. Save in one and it shows up in the others.",
+    "쓸 수 있어요": "Available",
+    "구조를 그리고 분자량·cLogP·TPSA·pKa·CNS MPO를 봅니다. 입체화학과 3D 보기, 화합물 목록 저장도 여기서요.":
+      "Draw a structure and see MW, cLogP, TPSA, pKa and CNS MPO. Stereochemistry, 3D view and saving compounds live here too.",
+    "FID·JCAMP 읽기, 위상·베이스라인·적분, 다중도 해석과 논문용 문구 만들기.":
+      "Read FID and JCAMP, phase, baseline and integrate, analyse multiplets and write the report text.",
+    "도킹 · MD": "Docking · MD",
+    "리간드 준비와 그리드 박스 설정, 결과 포즈와 궤적 보기. 계산은 Vina·GROMACS에서.":
+      "Prepare ligands, set the grid box, view poses and trajectories. The calculations run in Vina and GROMACS.",
+    "R기 분해표, Matched Molecular Pair, activity cliff, 치환기별 기여도.":
+      "R-group tables, matched molecular pairs, activity cliffs, substituent contributions.",
+    "물성 (SPR)": "Properties (SPR)",
+    "계산값과 실측값 비교, 용해도·투과도·안정성 기록, 활성-물성 산점도.":
+      "Calculated vs measured values, solubility, permeability and stability records, activity–property plots.",
+    "독성 (STR)": "Toxicity (STR)",
+    "구조 경고와 hERG·CYP·AMES 실측값 기록, 구조 변화에 따른 독성 추이.":
+      "Structural alerts, measured hERG, CYP and Ames data, and how toxicity tracks with structure.",
     // ---- 메시지 ----
     "먼저 구조를 그려주세요": "Draw a structure first",
     "이 구조를 읽지 못했어요. 다시 그려주세요.": "Could not read this structure. Please redraw it.",
@@ -286,8 +306,14 @@
 
   var LANGS = { ko: "한국어", en: "English" };
   var KEY = "medchem-office-lang";
-  var lang = "ko";
+  // 단추로 고른 적이 있으면 그 선택을, 처음이면 브라우저 언어를 따라요 (한국어면 한글, 그 밖은 영어)
+  var lang = null;
   try { var v = localStorage.getItem(KEY); if (v && LANGS[v]) lang = v; } catch (e) {}
+  if (!lang) {
+    var nav = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "ko"]);
+    lang = /^ko\b/i.test(String(nav[0] || "")) ? "ko" : "en";
+  }
+  try { document.documentElement.setAttribute("lang", lang); } catch (e) {}
 
   function T(s) {
     if (lang === "ko" || s == null) return s;

@@ -24,6 +24,11 @@ body {
   margin: 0; background: var(--bg); color: var(--fg); min-height: 100vh;
   font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
 }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.top h1 { margin: 0; }
+.lang { border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 8px;
+  padding: 5px 11px; font: inherit; font-size: 13px; font-weight: 800; letter-spacing: .04em; cursor: pointer; min-width: 44px; }
+.lang:hover { border-color: var(--accent); color: var(--accent); }
 .wrap { max-width: 880px; margin: 0 auto; padding: 48px 16px 64px; }
 header { margin-bottom: 28px; }
 h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -.01em; }
@@ -49,13 +54,14 @@ a.tool:hover { border-color: var(--accent); transform: translateY(-1px); }
   border-radius: 10px; font-size: 13px; color: var(--muted); line-height: 1.65;
 }
 .note b { color: var(--fg); font-weight: 600; }
+.cntline { margin-top: 14px; font-size: 13px; color: var(--muted); }
 .cnt { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 700; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>의약화학 오피스<span id="hubLang"></span></h1>
+    <div class="top"><h1>의약화학 오피스</h1><button type="button" class="lang" id="langBtn" title="한국어 / English">EN</button></div>
     <p class="sub">여섯 도구가 같은 화합물 목록을 함께 씁니다. 한 곳에서 저장하면 나머지에서 바로 읽혀요.</p>
   </header>
 
@@ -92,23 +98,41 @@ a.tool:hover { border-color: var(--accent); transform: translateY(-1px); }
     </div>
   </div>
 
-  <div class="note" id="note">
-    <b>폴더를 통째로 옮기세요.</b> <code>공통</code> 폴더에 화학 엔진과 화합물 목록이 들어 있어서,
-    도구 폴더만 따로 떼면 열리지 않아요.<br>
-    인터넷에 아무것도 보내지 않습니다. 구조와 데이터는 이 PC 안에만 있어요.
-  </div>
+  <div class="note" id="note"></div>
+  <div class="cntline" id="cnt"></div>
 </div>
 
+<script src="common/i18n.js"></script>
 <script>
-// 저장된 화합물 수를 보여줘요 (목록은 도구들과 같은 곳에 있습니다)
 (function () {
-  var n = 0;
-  try { var v = JSON.parse(localStorage.getItem("medchem-office-compounds-v1") || "[]"); n = Array.isArray(v) ? v.length : 0; } catch (e) {}
-  if (!n) return;
-  var d = document.createElement("div");
-  d.style.cssText = "margin-top:14px;font-size:13px;color:var(--muted)";
-  d.innerHTML = '지금 목록에 화합물 <span class="cnt">' + n + "</span>개가 저장돼 있어요.";
-  document.getElementById("note").parentNode.insertBefore(d, document.getElementById("note"));
+  var local = location.protocol === "file:";          // 내려받아 연 것인지, 웹 주소로 연 것인지
+  var NOTE = {
+    ko: local
+      ? "<b>폴더를 통째로 옮기세요.</b> <code>common</code> 폴더에 화학 엔진과 화합물 목록이 들어 있어서, 도구 폴더만 따로 떼면 열리지 않아요.<br>인터넷에 아무것도 보내지 않습니다. 구조와 데이터는 이 PC 안에만 있어요."
+      : "<b>설치 없이 바로 쓰는 중이에요.</b> 계산은 전부 이 브라우저 안에서 하고, 구조는 어디에도 보내지 않아요.<br>저장한 화합물은 이 브라우저에만 남아요. 다른 PC에서 쓰거나 백업하려면 CSV로 내보내세요. 인터넷이 없는 곳에서는 <a href=\"https://github.com/jangkusic/medchem-office/releases\">내려받아</a> 쓰시면 됩니다.",
+    en: local
+      ? "<b>Keep the folder together.</b> The <code>common</code> folder holds the chemistry engine and the compound list, so a tool folder on its own will not open.<br>Nothing is sent over the internet. Structures and data stay on this computer."
+      : "<b>Nothing to install.</b> Every calculation runs inside this browser, and structures are never sent anywhere.<br>Saved compounds stay in this browser only. Export CSV to back them up or move them. For computers without internet, <a href=\"https://github.com/jangkusic/medchem-office/releases\">download it</a> and run it offline."
+  };
+  function count() {
+    var n = 0;
+    try { var v = JSON.parse(localStorage.getItem("medchem-office-compounds-v1") || "[]"); n = Array.isArray(v) ? v.length : 0; } catch (e) {}
+    return n;
+  }
+  function paint() {
+    var en = I18N.lang === "en";
+    document.getElementById("note").innerHTML = NOTE[en ? "en" : "ko"];
+    var n = count(), c = document.getElementById("cnt");
+    c.innerHTML = !n ? "" : en
+      ? '<span class="cnt">' + n + "</span> compound" + (n > 1 ? "s" : "") + " saved in your list."
+      : '지금 목록에 화합물 <span class="cnt">' + n + "</span>개가 저장돼 있어요.";
+    document.getElementById("langBtn").textContent = en ? "한" : "EN";
+    document.title = en ? "MedChem Office" : "의약화학 오피스";
+  }
+  window.onLangChange = paint;
+  document.getElementById("langBtn").onclick = function () { I18N.set(I18N.lang === "ko" ? "en" : "ko"); };
+  paint();
+  I18N.apply();
 })();
 </script>
 </body>
