@@ -1,0 +1,1651 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>구조 그리기 · 물성 — 의약화학 도구</title>
+<link href="../common/ketcher/static/css/main.96b87be0.css" rel="stylesheet">
+<style>
+/* 레이아웃: 위쪽 탭 막대 + 탭마다 작업 화면. 구조 탭은 왼쪽 Ketcher 편집기, 오른쪽 물성 패널. */
+:root {
+  --mc-bg: #f4f6f7;
+  --mc-panel: #ffffff;
+  --mc-ink: #17222a;
+  --mc-muted: #5b6871;
+  --mc-line: #dfe5e8;
+  --mc-accent: #16707a;
+  --mc-accent-soft: #e3f1f2;
+  --mc-ok: #2b7a4b; --mc-ok-soft: #e2f3e8;
+  --mc-warn: #a4590b; --mc-warn-soft: #fbefdc;
+  --mc-bad: #b3261e; --mc-bad-soft: #fbe6e3;
+  --mc-font: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --mc-mono: Consolas, "SFMono-Regular", Menlo, monospace;
+}
+html, body { height: 100%; margin: 0; }
+[hidden] { display: none !important; }
+body { background: var(--mc-bg); color: var(--mc-ink); font-family: var(--mc-font); font-size: 14px; }
+.mc, .mc * { box-sizing: border-box; }
+.mc-app { display: flex; flex-direction: column; height: 100%; }
+.mc-top { display: flex; align-items: center; gap: 18px; padding: 0 16px; height: 52px; background: #10343a; color: #fff; flex: 0 0 auto; }
+.mc-logo { font-weight: 800; font-size: 17px; letter-spacing: -0.01em; white-space: nowrap; }
+.mc-logo small { font-weight: 400; font-size: 12px; opacity: .7; margin-left: 6px; }
+.mc-tabs { display: flex; gap: 2px; height: 100%; overflow-x: auto; }
+.mc-tab { font: inherit; font-size: 14px; font-weight: 700; color: rgba(255,255,255,.75); background: transparent; border: 0; border-bottom: 3px solid transparent; padding: 0 14px; cursor: pointer; white-space: nowrap; }
+.mc-tab[aria-selected="true"] { color: #fff; border-bottom-color: #7fd3d9; }
+.mc-tab .soon { font-size: 11px; font-weight: 600; opacity: .7; margin-left: 4px; }
+.mc-tab:focus-visible, .mc-btn:focus-visible, .mc input:focus-visible, .mc textarea:focus-visible, .mc select:focus-visible { outline: 2px solid var(--mc-accent); outline-offset: 2px; }
+.mc-spacer { flex: 1; }
+.mc-note { font-size: 12px; opacity: .75; white-space: nowrap; }
+.mc-view { flex: 1 1 auto; min-height: 0; display: none; }
+.mc-view.on { display: flex; }
+
+/* 구조 탭 */
+#draw { flex-direction: row; }
+#kwrap { flex: 1 1 auto; min-width: 0; position: relative; height: 100%; overflow: hidden; }
+#root { position: absolute; inset: 0; background: #fff; }
+/* 도구상자 옮기기 */
+.mc-topbtn { font: inherit; font-size: 13px; font-weight: 700; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 6px 10px; cursor: pointer; white-space: nowrap; }
+.mc-topbtn:hover { background: rgba(255,255,255,.2); }
+.mc-topbtn[aria-pressed="true"] { background: #7fd3d9; color: #10343a; border-color: #7fd3d9; }
+#moveLayer { position: absolute; inset: 0; z-index: 50; background: rgba(16,52,58,.08); }
+#moveLayer[hidden] { display: none; }
+.mv-frame { position: absolute; border: 2px dashed var(--mc-accent); background: rgba(22,112,122,.12); border-radius: 8px; cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; }
+.mv-frame:active { cursor: grabbing; }
+.mv-frame span { background: var(--mc-accent); color: #fff; font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 999px; white-space: nowrap; pointer-events: none; }
+.mv-banner { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: #fff; border: 1px solid var(--mc-line); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.15); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; z-index: 2; max-width: 360px; }
+.mv-banner b { font-size: 15px; }
+.mv-banner p { margin: 0; color: var(--mc-muted); font-size: 13px; line-height: 1.5; }
+/* 단축키 설정 */
+.mc-modal { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.mc-modal[hidden] { display: none; }
+.mc-modal .mc-mbox { background: #fff; border-radius: 14px; width: min(760px, 100%); max-height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.mc-modal header { padding: 14px 18px 10px; border-bottom: 1px solid var(--mc-line); display: flex; flex-direction: column; gap: 8px; }
+.mc-modal h2 { margin: 0; font-size: 18px; }
+.mc-modal .sub { color: var(--mc-muted); font-size: 13px; line-height: 1.5; }
+.mc-modal .body { overflow-y: auto; padding: 4px 18px 16px; }
+.mc-modal footer { padding: 10px 18px; border-top: 1px solid var(--mc-line); display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+.hk-group { font-size: 12px; font-weight: 800; color: var(--mc-muted); letter-spacing: .05em; margin: 14px 0 4px; }
+.hk-row { display: grid; grid-template-columns: minmax(0, 1fr) 160px 170px 28px; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--mc-line); }
+.hk-row .nm small { display: block; color: var(--mc-muted); font-size: 11px; }
+kbd.k { font-family: var(--mc-mono); font-size: 12px; background: var(--mc-bg); border: 1px solid var(--mc-line); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+.hk-def { color: var(--mc-muted); font-size: 12px; white-space: nowrap; }
+.hk-set { font: inherit; font-size: 13px; border: 1px dashed var(--mc-line); background: #fff; border-radius: 8px; padding: 5px 8px; cursor: pointer; text-align: left; min-height: 32px; }
+.hk-set.has { border-style: solid; border-color: var(--mc-accent); background: var(--mc-accent-soft); font-weight: 700; }
+.hk-set.rec { border-color: var(--mc-warn); background: var(--mc-warn-soft); color: var(--mc-warn); font-weight: 700; }
+.hk-x { font: inherit; border: 0; background: none; color: var(--mc-muted); cursor: pointer; font-size: 16px; }
+.hk-warn { grid-column: 1 / -1; font-size: 12px; color: var(--mc-warn); margin-top: -2px; }
+.mc-side { flex: 0 0 380px; height: 100%; overflow-y: auto; background: var(--mc-panel); border-left: 1px solid var(--mc-line); padding: 14px 16px 40px; display: flex; flex-direction: column; gap: 14px; }
+.mc-h { font-size: 12px; font-weight: 800; color: var(--mc-muted); letter-spacing: .06em; margin: 0 0 6px; }
+.mc-card { border: 1px solid var(--mc-line); border-radius: 10px; padding: 10px 12px; }
+.mc-formula { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mc-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-variant-numeric: tabular-nums; }
+.mc-kv span { color: var(--mc-muted); }
+.mc-kv b { text-align: right; font-weight: 700; font-family: var(--mc-mono); font-size: 13px; }
+.mc-rules { display: block; padding-top: 4px; padding-bottom: 4px; }
+.mc-rules .r { display: grid; grid-template-columns: 1fr 70px 64px; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--mc-line); font-variant-numeric: tabular-nums; }
+.mc-rules .r:last-child { border-bottom: 0; }
+.mc-rules .nm small { color: var(--mc-muted); font-size: 11px; display: block; }
+.mc-rules .v { font-family: var(--mc-mono); font-weight: 700; text-align: right; }
+.pill { font-size: 12px; font-weight: 800; border-radius: 999px; padding: 2px 8px; text-align: center; white-space: nowrap; }
+.pill.ok { background: var(--mc-ok-soft); color: var(--mc-ok); }
+.pill.warn { background: var(--mc-warn-soft); color: var(--mc-warn); }
+.pill.bad { background: var(--mc-bad-soft); color: var(--mc-bad); }
+.pill.na { background: var(--mc-bg); color: var(--mc-muted); }
+.mc-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.mc-badge { flex: 1 1 140px; border-radius: 10px; padding: 8px 10px; font-weight: 800; }
+.mc-badge small { display: block; font-weight: 500; font-size: 12px; opacity: .85; }
+.mc-badge.ok { background: var(--mc-ok-soft); color: var(--mc-ok); }
+.mc-badge.bad { background: var(--mc-bad-soft); color: var(--mc-bad); }
+.mpo-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.mpo-score { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mpo-score small { font-size: 14px; color: var(--mc-muted); font-weight: 600; }
+.mpo-row { display: grid; grid-template-columns: 1fr 64px 70px 34px; gap: 8px; align-items: center; padding: 4px 0; font-variant-numeric: tabular-nums; font-size: 13px; }
+.mpo-row .v { font-family: var(--mc-mono); text-align: right; }
+.mpo-row .s { font-family: var(--mc-mono); text-align: right; font-weight: 700; }
+.mpo-bar { height: 6px; background: var(--mc-bg); border-radius: 3px; overflow: hidden; }
+.mpo-bar i { display: block; height: 100%; background: var(--mc-accent); }
+.mpo-row.miss .mpo-bar i { background: transparent; }
+.mpo-row small { display: block; color: var(--mc-muted); font-size: 11px; }
+#tbl th.tgt { white-space: nowrap; }
+#tbl th.tgt .tn { display: inline-flex; align-items: center; gap: 3px; }
+#tbl th.tgt .ren { border: 0; background: none; padding: 0 1px; cursor: pointer; color: var(--mc-line); font-size: 11px; line-height: 1; }
+#tbl th.tgt:hover .ren { color: var(--mc-muted); }
+#tbl th.tgt .ren:hover { color: var(--mc-fg, inherit); }
+#tbl th.tgt small { display: block; font-weight: 500; color: var(--mc-muted); font-size: 10px; letter-spacing: 0; }
+#tbl td.tgt { font-family: var(--mc-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+#tbl td.tgt small { color: var(--mc-muted); font-family: var(--mc-sans, inherit); }
+#tbl td.tgt .na { color: var(--mc-line); }
+.mpo-est { border: 1px dashed var(--mc-line); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.mpo-est .e { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: baseline; font-size: 13px; }
+.mpo-est .e b { font-family: var(--mc-mono); font-size: 14px; }
+.mpo-est .e i { display: block; font-style: normal; color: var(--mc-muted); font-size: 11px; line-height: 1.45; }
+.mpo-est .e .tag { font-size: 10px; color: var(--mc-muted); border: 1px solid var(--mc-line); border-radius: 4px; padding: 0 4px; margin-left: 5px; vertical-align: 1px; }
+.mpo-ov > summary { font-size: 12px; color: var(--mc-muted); cursor: pointer; padding: 2px 0; }
+.mpo-ov[open] > summary { margin-bottom: 6px; }
+.mpo-note { font-size: 12px; color: var(--mc-muted); line-height: 1.5; }
+.mpo-note b { color: var(--mc-warn); }
+/* 위험 신호 */
+#risk { flex-direction: column; padding: 12px 16px 30px; gap: 12px; overflow: auto; }
+.rk-warn { background: var(--mc-warn-soft); border: 1px solid #f0d9ae; border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.6; color: #6b3d05; }
+.rk-warn b { color: #5a3304; }
+.rk-main { display: grid; grid-template-columns: minmax(360px, 46%) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 980px) { .rk-main { grid-template-columns: minmax(0, 1fr); } }
+.rk-pic { background: var(--mc-panel); border: 1px solid var(--mc-line); border-radius: 12px; padding: 8px; position: sticky; top: 0; }
+.rk-pic svg { display: block; width: 100%; height: auto; }
+.rk-legend { display: flex; gap: 6px; flex-wrap: wrap; padding: 6px 4px 2px; }
+.rk-chip { font: inherit; font-size: 12px; font-weight: 700; border: 1px solid var(--mc-line); background: #fff; border-radius: 999px; padding: 4px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: var(--mc-muted); }
+.rk-chip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.rk-chip[aria-pressed="true"] { color: var(--mc-ink); border-color: currentColor; background: #fff; }
+.rk-chip[aria-pressed="false"] { opacity: .45; }
+.rk-list { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.rk-sec { font-size: 12px; font-weight: 800; letter-spacing: .05em; color: var(--mc-muted); margin: 6px 0 0; display: flex; align-items: center; gap: 6px; }
+.rk-sec i { width: 10px; height: 10px; border-radius: 50%; }
+.rk-item { text-align: left; font: inherit; width: 100%; background: var(--mc-panel); border: 1px solid var(--mc-line); border-left: 5px solid var(--rc); border-radius: 10px; padding: 9px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 5px; }
+.rk-item:hover { border-color: var(--rc); }
+.rk-item[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--rc) inset; }
+.rk-item .t { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.rk-item .nm { font-weight: 800; }
+.rk-item .why { font-size: 13px; color: var(--mc-muted); line-height: 1.55; white-space: pre-line; }
+.rk-item .fix { font-size: 13px; line-height: 1.55; background: var(--mc-accent-soft); border-radius: 7px; padding: 6px 9px; }
+.rk-item .fix b { color: var(--mc-accent); }
+.sev { font-size: 11px; font-weight: 800; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.sev.high { background: var(--mc-bad-soft); color: var(--mc-bad); }
+.sev.mid { background: var(--mc-warn-soft); color: var(--mc-warn); }
+.sev.low { background: var(--mc-bg); color: var(--mc-muted); }
+.rk-none { background: var(--mc-ok-soft); color: var(--mc-ok); border-radius: 10px; padding: 14px; font-weight: 700; }
+.frag-bar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.frag-chip { font: inherit; font-size: 12px; font-weight: 700; border: 1px solid var(--mc-line); background: #fff; color: var(--mc-muted); border-radius: 9px; padding: 5px 9px; cursor: pointer; text-align: left; line-height: 1.3; }
+.frag-chip b { display: block; font-size: 13px; color: var(--mc-ink); }
+.frag-chip small { color: var(--mc-muted); font-variant-numeric: tabular-nums; }
+.frag-chip[aria-pressed="true"] { border-color: var(--mc-accent); background: var(--mc-accent-soft); color: var(--mc-accent); }
+.frag-chip[aria-pressed="true"] b { color: var(--mc-accent); }
+.frag-hint { font-size: 12px; color: var(--mc-muted); line-height: 1.5; }
+.ms-row { display: grid; grid-template-columns: 112px minmax(0, 1fr) 110px; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--mc-line); }
+.ms-row:last-of-type { border-bottom: 0; }
+.ms-row .f { font-size: 12px; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
+.ms-row .f b { display: block; color: var(--mc-ink); font-size: 13px; }
+.mc-empty { color: var(--mc-muted); background: var(--mc-bg); border-radius: 10px; padding: 14px; line-height: 1.6; }
+.mc-copy { display: flex; gap: 6px; align-items: stretch; }
+.mc-copy code { flex: 1; min-width: 0; font-family: var(--mc-mono); font-size: 12px; background: var(--mc-bg); border-radius: 6px; padding: 6px 8px; overflow-wrap: anywhere; }
+.mc-btn { font: inherit; font-size: 13px; font-weight: 700; border: 1px solid var(--mc-line); background: #fff; color: var(--mc-ink); border-radius: 8px; padding: 7px 12px; cursor: pointer; white-space: nowrap; }
+.mc-btn:hover { border-color: var(--mc-accent); }
+.mc-btn.primary { background: var(--mc-accent); border-color: var(--mc-accent); color: #fff; }
+.mc-btn.danger { color: var(--mc-bad); }
+.mc-btn.sm { padding: 4px 8px; font-size: 12px; }
+.mc-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.mc textarea, .mc input[type=text], .mc input[type=number], .mc select { font: inherit; font-size: 13px; border: 1px solid var(--mc-line); border-radius: 8px; padding: 7px 9px; background: #fff; color: var(--mc-ink); width: 100%; min-width: 0; }
+.mc textarea { font-family: var(--mc-mono); font-size: 12px; min-height: 56px; resize: vertical; }
+.mc label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--mc-muted); }
+.mc-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mc-msg { font-size: 12px; color: var(--mc-bad); min-height: 1em; }
+.mc-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--mc-muted); font-weight: 700; background: #fff; z-index: 1; pointer-events: none; }
+
+/* 목록 탭 */
+#list { flex-direction: column; padding: 14px 16px; gap: 12px; overflow: auto; }
+.mc-bar { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; background: var(--mc-panel); border: 1px solid var(--mc-line); border-radius: 10px; padding: 10px 12px; }
+.mc-bar .grp { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--mc-muted); }
+.mc-tablewrap { background: var(--mc-panel); border: 1px solid var(--mc-line); border-radius: 10px; overflow: auto; }
+table.mc-t { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.mc-t th { position: sticky; top: 0; background: #f8fafb; text-align: right; font-size: 12px; color: var(--mc-muted); padding: 8px 10px; border-bottom: 1px solid var(--mc-line); cursor: pointer; white-space: nowrap; user-select: none; }
+.mc-t th.l, .mc-t td.l { text-align: left; }
+.mc-t th[aria-sort="ascending"]::after { content: " ▲"; } .mc-t th[aria-sort="descending"]::after { content: " ▼"; }
+.mc-t td { padding: 6px 10px; border-bottom: 1px solid var(--mc-line); text-align: right; font-family: var(--mc-mono); font-size: 13px; vertical-align: middle; }
+.mc-t td.txt { font-family: var(--mc-font); }
+.mc-t tr:hover td { background: #fafcfc; }
+.mc-t .pic { width: 150px; height: 100px; display: flex; align-items: center; justify-content: center; }
+.mc-t .pic svg, .mc-t .pic img { max-width: 150px; max-height: 100px; }
+.mc-t .hi { color: var(--mc-bad); font-weight: 800; }
+.simbar { display: inline-block; width: 46px; height: 6px; background: var(--mc-bg); border-radius: 3px; vertical-align: middle; margin-right: 6px; overflow: hidden; }
+.simbar i { display: block; height: 100%; background: var(--mc-accent); }
+.mc-sum { color: var(--mc-muted); font-size: 13px; }
+
+/* 준비 중 탭 */
+.mc-soon { flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; }
+.mc-soon .box { max-width: 560px; background: var(--mc-panel); border: 1px solid var(--mc-line); border-radius: 12px; padding: 20px 22px; text-align: left; line-height: 1.7; }
+.mc-soon h2 { margin: 0 0 6px; font-size: 18px; }
+.mc-soon ul { margin: 6px 0 0; padding-left: 20px; }
+.mc-topbtn.lang { font-weight: 800; letter-spacing: .04em; min-width: 38px; }
+.mc-home { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-right: 2px; border-radius: 7px; border: 1px solid var(--mc-line); color: var(--mc-muted); text-decoration: none; font-size: 15px; flex: none; }
+.mc-home:hover { border-color: var(--mc-accent); color: var(--mc-accent); }
+.iso-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 10px; }
+.iso { margin: 0; border: 1px solid var(--mc-line); border-radius: 10px; padding: 8px; background: var(--mc-panel); display: flex; flex-direction: column; gap: 6px; }
+.iso.now { border-color: var(--mc-accent); box-shadow: 0 0 0 1px var(--mc-accent) inset; }
+.iso .pic { height: 108px; display: flex; align-items: center; justify-content: center; }
+.iso .pic img, .iso .pic svg { max-width: 100%; max-height: 108px; }
+.iso figcaption { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; }
+.iso .cip { font-family: var(--mc-mono); font-weight: 700; color: var(--mc-accent); }
+.iso .tag { font-size: 11px; color: var(--mc-muted); font-weight: 600; }
+.mc-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #17222a; color: #fff; padding: 10px 16px; border-radius: 999px; font-weight: 700; z-index: 100; }
+</style>
+</head>
+<body>
+<div class="mc mc-app">
+  <header class="mc-top">
+    <a class="mc-home" href="../index.html" title="도구 목록으로">←</a><div class="mc-logo">구조 그리기 · 물성<small>의약화학 오피스 · 도구 1 · v1.6</small></div>
+    <div class="mc-spacer"></div>
+    <button class="mc-topbtn lang" type="button" id="langBtn" title="한국어 / English">EN</button>
+    <button class="mc-topbtn" type="button" id="mvBtn" aria-pressed="false" hidden>도구상자 옮기기</button>
+    <button class="mc-topbtn" type="button" id="hkBtn" hidden>단축키 설정</button>
+    <div class="mc-note">인터넷 없이 이 PC에서만 계산 · 저장</div>
+  </header>
+
+  <!-- 구조 그리기 -->
+  <section class="mc-view on" id="draw">
+    <div id="kwrap">
+      <div id="root"></div>
+      <div id="moveLayer" hidden>
+        <div class="mv-banner"><b>도구상자를 끌어서 옮기세요</b><p>점선 상자를 원하는 곳으로 끌면 돼요. 위치는 다음에 열 때도 그대로예요.</p>
+          <div class="mc-row"><button class="mc-btn" type="button" id="mvReset">처음 위치로</button><button class="mc-btn primary" type="button" id="mvDone">완료</button></div></div>
+      </div>
+    </div>
+    <aside class="mc-side" aria-label="물성">
+      <div id="loadMsg" class="mc-empty">구조 편집기를 여는 중이에요. 처음 열 때는 10초쯤 걸려요.</div>
+      <div id="propsBox" hidden>
+        <div id="emptyBox" class="mc-empty">왼쪽에 구조를 그리면 물성이 바로 계산돼요.<br>아래 칸에 SMILES나 MOL을 붙여넣어도 돼요.</div>
+        <div id="propsOut" hidden style="display:flex;flex-direction:column;gap:14px">
+          <div id="fragBox" hidden style="display:flex;flex-direction:column;gap:6px">
+            <p class="mc-h" style="margin:0">캔버스에 있는 구조</p>
+            <div class="frag-bar" id="fragBar"></div>
+            <p class="frag-hint" id="fragHint"></p>
+          </div>
+          <div class="mc-card">
+            <div class="mc-formula" id="pFormula">–</div>
+            <div class="mc-kv" style="margin-top:6px">
+              <span>분자량 (MW)</span><b id="pMW"></b>
+              <span>정확 질량 (M)</span><b id="pEx"></b>
+            </div>
+          </div>
+          <div>
+            <p class="mc-h">약물 유사성</p>
+            <div class="mc-badges" id="pBadges"></div>
+          </div>
+          <div class="mc-card mc-rules" id="pRules"></div>
+          <div class="mc-card" style="display:flex;flex-direction:column;gap:8px">
+            <div class="mpo-head"><span class="mc-h" style="margin:0">CNS MPO <span style="font-weight:600;letter-spacing:0">(Wager 2010)</span></span><span class="pill" id="mpoPill"></span></div>
+            <div class="mpo-score" id="mpoScore"></div>
+            <div id="mpoRows"></div>
+            <div class="mpo-est" id="mpoEst"></div>
+            <details class="mpo-ov">
+              <summary>실험값이 있으면 직접 넣기</summary>
+              <div class="mc-grid2">
+                <label class="f">pKa (가장 센 염기)<input type="number" id="inPka" step="0.1" placeholder="예상값 사용"></label>
+                <label class="f">cLogD (pH 7.4)<input type="number" id="inLogd" step="0.1" placeholder="예상값 사용"></label>
+              </div>
+            </details>
+            <div class="mpo-note" id="mpoNote"></div>
+          </div>
+          <div class="mc-card" id="stereoCard" hidden style="display:flex;flex-direction:column;gap:8px">
+            <div class="mpo-head"><span class="mc-h" style="margin:0">입체화학</span><span class="pill" id="stereoPill"></span></div>
+            <div id="stereoBody"></div>
+          </div>
+          <div class="mc-card">
+            <div class="mc-kv" id="pMore"></div>
+          </div>
+          <div>
+            <p class="mc-h">복사</p>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div class="mc-copy"><code id="cSmiles"></code><button class="mc-btn sm" type="button" data-copy="cSmiles">SMILES</button></div>
+              <div class="mc-copy"><code id="cHrms"></code><button class="mc-btn sm" type="button" data-copy="cHrms">HRMS 문구</button></div>
+              <div class="mc-copy"><code id="cKey">계산 중…</code><button class="mc-btn sm" type="button" data-copy="cKey">InChIKey</button></div>
+            </div>
+          </div>
+          <div class="mc-row">
+            <button class="mc-btn primary" type="button" id="view3d">3D 보기</button>
+            <button class="mc-btn" type="button" id="dlMol">MOL 저장</button>
+            <button class="mc-btn" type="button" id="dlCdxml">ChemDraw(.cdxml) 저장</button>
+          </div>
+          <div class="mc-card" style="display:flex;flex-direction:column;gap:8px">
+            <p class="mc-h" style="margin:0">화합물 목록에 저장</p>
+            <div class="mc-grid2">
+              <label class="f">화합물 코드<input type="text" id="sCode" placeholder="예: NVR-001"></label>
+              <label class="f">타깃<input type="text" id="sTgt" placeholder="예: EGFR" list="tgtList"><datalist id="tgtList"></datalist></label>
+            </div>
+            <label class="f">활성값<span style="display:flex;gap:4px"><input type="number" id="sAct" placeholder="예: 35" step="any"><select id="sUnit" style="width:auto"><option>nM</option><option>µM</option><option>%</option></select></span></label>
+            <label class="f">메모<input type="text" id="sMemo" placeholder="예: IC50 (EGFR), 3단계 수율 42%"></label>
+            <div class="mc-row" style="flex-wrap:nowrap">
+              <button class="mc-btn primary" type="button" id="saveBtn" style="flex:1">목록에 저장</button>
+              <button class="mc-btn" type="button" id="saveAllBtn" hidden>모두 따로 저장</button>
+            </div>
+            <div class="mc-row" style="justify-content:space-between;align-items:center">
+              <span class="mc-sum" id="listSum"></span>
+              <button class="mc-btn sm" type="button" id="csvOut">CSV 내보내기</button>
+            </div>
+          </div>
+        </div>
+        <div class="mc-card" style="display:flex;flex-direction:column;gap:6px;margin-top:14px">
+          <p class="mc-h" style="margin:0">SMILES · MOL · CDXML 불러오기</p>
+          <textarea id="inTxt" placeholder="예: CC(=O)Oc1ccccc1C(=O)O"></textarea>
+          <div class="mc-row">
+            <button class="mc-btn primary" type="button" id="inBtn">편집기에 넣기</button>
+            <label class="mc-btn" style="display:inline-block">파일 열기<input type="file" id="inFile" accept=".mol,.sdf,.smi,.cdxml,.ket,.txt" hidden></label>
+          </div>
+          <div class="mc-msg" id="inMsg"></div>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+</div>
+<div class="mc mc-modal" id="hkModal" hidden role="dialog" aria-modal="true" aria-labelledby="hkTitle">
+  <div class="mc-mbox">
+    <header>
+      <h2 id="hkTitle">단축키 설정</h2>
+      <div class="sub">기능 옆의 칸을 누르고 원하는 키를 누르세요. Ctrl, Alt, Shift를 함께 눌러도 돼요. 한글 입력 상태에서도 동작해요. 내가 정한 단축키가 편집기 기본 단축키보다 우선해요.</div>
+      <input type="text" id="hkSearch" placeholder="기능 찾기 (예: 이중, 벤젠, 지우개)">
+    </header>
+    <div class="body" id="hkBody"></div>
+    <footer><span style="display:flex;gap:8px"><button class="mc-btn danger" type="button" id="hkReset">내 단축키 모두 지우기</button><button class="mc-btn" type="button" id="hkCd">ChemDraw 기본값으로</button></span><button class="mc-btn primary" type="button" id="hkClose">닫기</button></footer>
+  </div>
+</div>
+<div class="mc-toast" id="toast" hidden></div>
+
+<script src="../common/chem.js"></script>
+<script src="../common/alerts.js"></script>
+<script src="../common/pka.js"></script>
+<script src="../common/mol3d.js"></script>
+<script src="../common/stereo.js"></script>
+<script src="../common/i18n.js"></script>
+<script src="../common/store.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var cur = null; // { smiles, molfile, mol, props }
+  var list = Store.list;                       // 여섯 도구가 함께 쓰는 목록 (../common/store.js)
+  Store.onError = toast;
+  Store.onExternal = function () { renderList(); renderCount(); };   // 다른 도구가 바꾸면 따라 갱신
+  function saveList() { Store.save(); }
+  function toast(t) { var el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 2000); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function f(n, d) { return (n == null || isNaN(n)) ? "–" : (+n).toFixed(d); }
+
+  // ---------- 탭 ----------
+  function goTab() {}                 // 탭이 없어졌어요 (목록·SAR 은 도구 4로)
+
+  // ---------- Ketcher 연결 ----------
+  var K = null, busy = false, again = false;
+  var wait = setInterval(function () {
+    if (window.ketcher && window.ketcher.editor) {
+      clearInterval(wait); K = window.ketcher;
+      $("loadMsg").hidden = true; $("propsBox").hidden = false;
+      try { K.editor.subscribe("change", function () { setTimeout(trackEdits, 0); schedule(); }); } catch (e) {}   // 알림이 수정보다 먼저 와서 한 박자 늦게 비교
+      renderCount(); initExtras();
+    }
+  }, 300);
+  var tmr = null;
+  function schedule() { clearTimeout(tmr); tmr = setTimeout(update, 250); }
+  function update() {
+    if (!K) return; if (busy) { again = true; return; } busy = true;
+    Promise.all([K.getSmiles().catch(function () { return ""; }), K.getMolfile("v2000").catch(function () { return ""; })]).then(function (r) {
+      var smi = r[0], mf = r[1];
+      var na = mf ? +((mf.replace(/\r/g, "").split("\n")[3] || "").substr(0, 3)) : 0, empty = !na;
+      if (empty) { cur = null; lastSelKey = null; show(); return; }
+      var o;
+      try { o = buildCur(mf, smi); } catch (e) { cur = null; show(); return; }
+      if (o.groups.length === 1) { o.groups[0].smiles = smi; cur = o; setG(o.gi, true); return; }
+      // 조각별 SMILES는 하나씩 차례로 변환 (동시에 부르면 응답이 없음)
+      return o.groups.reduce(function (chain, g) {
+        return chain.then(function () {
+          return K.indigo.convert(g.molfile, { outputFormat: "chemical/x-daylight-smiles" })
+            .then(function (r2) { g.smiles = String((r2 && r2.struct) || "").trim(); }, function () { g.smiles = ""; });
+        });
+      }, Promise.resolve()).then(function () { cur = o; setG(o.gi, true); });
+    }).finally(function () { busy = false; if (again) { again = false; update(); } });
+  }
+  // 캔버스에 떨어져 있는 구조들을 나누고, 염은 가장 가까운 본체에 붙이기
+  function buildCur(mf, smiAll) {
+    var comps = Chem.molfileComponents(mf);
+    if (comps.length <= 1) {
+      var m0 = Chem.parseMolfile(mf);
+      return { molfile: mf, smilesAll: smiAll, gi: 0, groups: [{ atomIdx: comps[0] || [], molfile: mf, mol: m0, props: Chem.props(m0), salts: [] }] };
+    }
+    var parts = comps.map(function (idx) {
+      var t = Chem.molfileSubset(mf, idx), m = Chem.parseMolfile(t), cx = 0, cy = 0;
+      m.atoms.forEach(function (a) { cx += a.x || 0; cy += a.y || 0; });
+      var n = m.atoms.length || 1;
+      return { idx: idx, mol: m, props: Chem.props(m), salt: Chem.isSalt(m), cx: cx / n, cy: cy / n };
+    });
+    var bodies = parts.filter(function (x) { return !x.salt; });
+    if (!bodies.length) bodies = parts.slice();
+    bodies.sort(function (a, b) { return a.cx - b.cx; }); // 왼쪽부터 구조 1, 2, 3…
+    var groups = bodies.map(function (bd) { return { members: [bd], salts: [] }; });
+    parts.forEach(function (x) {
+      if (bodies.indexOf(x) >= 0) return;
+      var best = 0, bd = Infinity;
+      groups.forEach(function (g, i) { var d = Math.hypot(g.members[0].cx - x.cx, g.members[0].cy - x.cy); if (d < bd) { bd = d; best = i; } });
+      groups[best].members.push(x); groups[best].salts.push(x.props.formula);
+    });
+    groups.forEach(function (g) {
+      var idx = []; g.members.forEach(function (x) { idx = idx.concat(x.idx); });
+      idx.sort(function (a, b) { return a - b; });
+      g.atomIdx = idx;
+      g.molfile = g.members.length === 1 ? Chem.molfileSubset(mf, idx) : Chem.molfileSubset(mf, idx);
+      g.mol = g.members.length === 1 ? g.members[0].mol : Chem.parseMolfile(g.molfile);
+      g.props = g.members.length === 1 ? g.members[0].props : Chem.props(g.mol);
+    });
+    var gi = 0; groups.forEach(function (g, i) { // 기본은 가장 큰 구조
+      var a = g.props, b = groups[gi].props;
+      if (a.heavy > b.heavy || (a.heavy === b.heavy && a.mw > b.mw)) gi = i;
+    });
+    return { molfile: mf, smilesAll: smiAll, gi: gi, groups: groups };
+  }
+  function setG(i, fresh) {
+    if (!cur || !cur.groups[i]) return;
+    cur.gi = i;
+    var g = cur.groups[i];
+    cur.mol = g.mol; cur.props = g.props; cur.smiles = g.smiles || ""; cur.molfile = g.molfile; cur.alerts = null;
+    if (!fresh) mpoFor = null;
+    show();
+  }
+  // 흔한 염은 익숙한 이름으로 (분자식 Hill 표기는 ClH 처럼 어색해서)
+  var SALT_NAME = { ClH: "HCl", BrH: "HBr", FH: "HF", HI: "HI", H2O4S: "H₂SO₄", H3O4P: "H₃PO₄", HNO3: "HNO₃", H2O: "물", "C2HF3O2": "TFA", "CH4O3S": "메실산", "C7H8O3S": "토실산", "C4H4O4": "푸마르산", "C4H6O4": "숙신산", "C4H6O6": "타르타르산", "C6H8O7": "시트르산", "C2H2O4": "옥살산", "C2H4O2": "아세트산", "CH4O": "메탄올", "C2H6O": "에탄올", Na: "Na⁺", K: "K⁺", Cl: "Cl⁻", Br: "Br⁻" };
+  function saltName(f) { var k = String(f).replace(/[+-]\d*$|\d*[+-]$/, ""); return SALT_NAME[k] || f; }
+  function renderFrags() {
+    var n = cur ? cur.groups.length : 0, salts = n ? cur.groups[cur.gi].salts : [];
+    $("fragBox").hidden = !(n > 1 || salts.length); $("saveAllBtn").hidden = n < 2;
+    $("fragBar").hidden = n < 2;
+    document.querySelector("#fragBox .mc-h").hidden = n < 2;
+    if ($("fragBox").hidden) return;
+    if (n < 2) {
+      $("fragHint").innerHTML = "<b>" + esc(salts.map(saltName).join(", ")) + "</b>이(가) 염으로 함께 계산돼 있어요. 본체만 보려면 캔버스에서 염을 지우세요.";
+      return;
+    }
+    $("saveAllBtn").textContent = n + "개 모두 따로 저장";
+    $("fragBar").innerHTML = cur.groups.map(function (g, i) {
+      return '<button type="button" class="frag-chip" data-g="' + i + '" aria-pressed="' + (i === cur.gi) + '"><b>구조 ' + (i + 1) + "</b><small>" + esc(g.props.formula) + " · " + f(g.props.mw, 1) + "</small></button>";
+    }).join("");
+    $("fragBar").querySelectorAll("[data-g]").forEach(function (b) { b.onclick = function () { setG(+b.dataset.g); selectGroup(+b.dataset.g); }; });
+    $("fragHint").innerHTML = "구조를 누르면 캔버스에서도 그 구조가 선택돼요." +
+      (salts.length ? "<br>이 구조에는 <b>" + esc(salts.map(saltName).join(", ")) + "</b>이(가) 염으로 함께 계산돼 있어요." : "");
+  }
+  // 캔버스에서 고른 구조로 자동 전환
+  var lastSelKey = null, atomPos = null;
+  function orderMap() {
+    var mp = {}, i = 0;
+    try { K.editor.struct().atoms.forEach(function (a, id) { mp[id] = i++; }); } catch (e) { return null; }
+    return mp;
+  }
+  // 오른쪽 구조 칩을 누르면 캔버스에서도 그 구조를 선택해요
+  function selectGroup(i) {
+    if (!K || !cur || !cur.groups[i] || cur.groups.length < 2) return;
+    var g = cur.groups[i];
+    try {
+      var st = K.editor.struct(), ix = 0, idOf = {};
+      st.atoms.forEach(function (a, id) { idOf[ix++] = id; });          // 분자파일 순서 → 편집기 원자 번호
+      var want = {}, atoms = [];
+      g.atomIdx.forEach(function (n) { var id = idOf[n]; if (id != null) { want[id] = 1; atoms.push(id); } });
+      if (!atoms.length) return;
+      var bonds = [];
+      st.bonds.forEach(function (b, id) { if (want[b.begin] && want[b.end]) bonds.push(id); });
+      K.editor.selection({ atoms: atoms, bonds: bonds });
+      lastSelKey = atoms.slice(0, 40).join(",");                        // 아래 감시 루프가 또 바꾸지 않도록
+    } catch (e) {}
+  }
+  setInterval(function () {
+    if (!K || !cur || cur.groups.length < 2) return;
+    if (!document.getElementById("draw").classList.contains("on")) return;
+    var sel = null; try { sel = K.editor.selection(); } catch (e) { return; }
+    var ids = sel && sel.atoms, key = ids && ids.length ? ids.slice(0, 40).join(",") : "";
+    if (key === lastSelKey) return;
+    lastSelKey = key;
+    if (!ids || !ids.length) return;
+    var mp = orderMap(); if (!mp) return;
+    var want = {}; cur.groups.forEach(function (g, i) { g.atomIdx.forEach(function (a) { want[a] = i; }); });
+    var hit = {};
+    ids.forEach(function (id) { var ix = mp[id]; if (ix != null && want[ix] != null) hit[want[ix]] = (hit[want[ix]] || 0) + 1; });
+    var keys = Object.keys(hit); if (!keys.length) return;
+    keys.sort(function (a, b) { return hit[b] - hit[a]; });
+    var gi = +keys[0];
+    if (gi !== cur.gi) setG(gi);
+  }, 450);
+
+  function ruleRow(name, sub, val, limit, dec, unit) {
+    var v = f(val, dec), st = limit == null ? "na" : (val <= limit ? "ok" : "bad");
+    return '<div class="r"><span class="nm">' + name + (sub ? "<small>" + sub + "</small>" : "") + '</span><span class="v">' + v + (unit || "") + '</span><span class="pill ' + st + '">' + (limit == null ? "참고" : (val <= limit ? "≤ " + limit : "> " + limit)) + '</span></div>';
+  }
+  var keyReq = 0;
+  function show() {
+    var has = !!cur;
+    $("emptyBox").hidden = has; $("propsOut").hidden = !has;
+    if (!has) { $("fragBox").hidden = true; $("saveAllBtn").hidden = true; updateRisk(); return; }
+    renderFrags();
+    var p = cur.props, H = 1.007276467;
+    $("pFormula").textContent = p.formula;
+    $("pMW").textContent = f(p.mw, 2);
+    $("pEx").textContent = f(p.exact, 4);
+    var lip = p.lipinskiViolations, bad = [];
+    if (p.mw > 500) bad.push("MW " + f(p.mw, 0) + " > 500");
+    if (p.clogp > 5) bad.push("cLogP " + f(p.clogp, 1) + " > 5");
+    if (p.nhoh > 5) bad.push("NH+OH " + p.nhoh + " > 5");
+    if (p.no > 10) bad.push("N+O " + p.no + " > 10");
+    var vb = [];
+    if (p.rotb > 10) vb.push("회전 결합 " + p.rotb + " > 10");
+    if (p.tpsa > 140) vb.push("TPSA " + f(p.tpsa, 0) + " > 140");
+    $("pBadges").innerHTML =
+      '<div class="mc-badge ' + (lip <= 1 ? "ok" : "bad") + '">Lipinski ' + (lip === 0 ? "통과" : "위반 " + lip + "개") + (bad.length ? "<small>" + esc(bad.join(" · ")) + "</small>" : "") + "</div>" +
+      '<div class="mc-badge ' + (p.veber ? "ok" : "bad") + '">Veber ' + (p.veber ? "통과" : "미달") + (vb.length ? "<small>" + esc(vb.join(" · ")) + "</small>" : "") + "</div>";
+    $("pRules").innerHTML =
+      ruleRow("분자량", "Lipinski", p.mw, 500, 1) +
+      ruleRow("cLogP", "Wildman–Crippen", p.clogp, 5, 2) +
+      ruleRow("NH + OH", "Lipinski 수소결합 주개", p.nhoh, 5, 0) +
+      ruleRow("N + O", "Lipinski 수소결합 받개", p.no, 10, 0) +
+      ruleRow("TPSA", "Å² · Veber", p.tpsa, 140, 1) +
+      ruleRow("회전 결합", "Veber", p.rotb, 10, 0);
+    renderMpo(); updateRisk(); renderStereo();
+    if (window.I18N) I18N.apply($("propsBox"));
+    $("pMore").innerHTML =
+      "<span>HBD / HBA</span><b>" + p.hbd + " / " + p.hba + "</b>" +
+      "<span>몰 굴절률 (MR)</span><b>" + f(p.mr, 2) + "</b>" +
+      "<span>무거운 원자 수</span><b>" + p.heavy + "</b>" +
+      "<span>고리 / 방향족 고리</span><b>" + p.rings + " / " + p.aromRings + "</b>" +
+      "<span>Fsp3</span><b>" + f(p.fsp3, 2) + "</b>" +
+      "<span>헤테로 원자</span><b>" + p.hetero + "</b>" +
+      (p.charge ? "<span>전하</span><b>" + (p.charge > 0 ? "+" : "") + p.charge + "</b>" : "");
+    $("cSmiles").textContent = cur.smiles;
+    var mh = addH(p.formula);
+    $("cHrms").textContent = "HRMS (ESI) m/z: [M+H]+ calcd for " + mh + " " + f(p.exact + H, 4) + "; found ";
+    var my = ++keyReq; $("cKey").textContent = "계산 중…";
+    K.getInChIKey().then(function (k) { if (my === keyReq) $("cKey").textContent = k || "–"; }, function () { if (my === keyReq) $("cKey").textContent = "계산할 수 없어요"; });
+  }
+  // ---------- CNS MPO ----------
+  var mpoFor = null;
+  function num(v) { return v === "" || v == null || isNaN(+v) ? null : +v; }
+  function mpoInputs(smi, props, mol, pkaVal, logdVal) {
+    var io = Chem.ionizable(mol), est = Chem.estimatePka(mol);
+    var eb = est.base, ea = est.acid;
+    var ePka = eb ? eb.pka : null;                                  // 예상 pKa (가장 센 염기). 염기가 없으면 null
+    var eLogd = Chem.logD(props.clogp, ePka, ea ? ea.pka : null);   // 예상 cLogD(7.4)
+    var uPka = num(pkaVal), uLogd = num(logdVal);                   // 직접 넣은 값이 있으면 그게 우선
+    var pka = uPka != null ? uPka : (ePka == null ? 0 : ePka);       // 염기가 없으면 양성자화되지 않으므로 만점 쪽
+    var logd = uLogd != null ? uLogd : eLogd;
+    var r = Chem.cnsMpo({ clogp: props.clogp, clogd: logd, mw: props.mw, tpsa: props.tpsa, hbd: props.hbd, pka: pka });
+    r.io = io; r.est = est; r.pka = pka; r.logd = logd;
+    r.ePka = ePka; r.eLogd = eLogd; r.pkaUser = uPka != null; r.logdUser = uLogd != null;
+    r.pkaBasis = eb ? eb.basis : "이온화되는 염기가 없어요";
+    r.logdBasis = "cLogP " + f(props.clogp, 1) + (ePka != null ? " · 염기 pKa " + f(ePka, 1) : "") + (ea ? " · 산 pKa " + f(ea.pka, 1) : "") + " 로 계산";
+    return r;
+  }
+  function mpoText(r) { return r.total != null ? f(r.total, 1) : f(r.min, 1) + "–" + f(r.max, 1); }
+  function mpoCls(v) { return v >= 4 ? "ok" : v >= 3 ? "warn" : "bad"; }
+  // ---------- 입체화학 ----------
+  // 지정된 입체는 편집기(Indigo)의 CIP 계산을 쓰고, 지정이 빠진 자리는 직접 찾아요.
+  var stFor = null, stData = null;
+  function potentialStereo(mol) {
+    var cen = [], dbl = [];
+    // 비칭 탄소 후보 — sp3 탄소에 서로 다른 가지 4개
+    mol.atoms.forEach(function (a, i) {
+      if (a.el !== "C" || a.arom) return;
+      if (a.nbrs.length + (a.h || 0) !== 4 || a.h > 1) return;
+      if (a.nbrs.some(function (n) { return !n.bond.arom && n.bond.order > 1; })) return;
+      var sigs = a.nbrs.map(function (n) { return branchSig(mol, n.atom, i, 5); });
+      if (a.h === 1) sigs.push("H");
+      var u = {}; sigs.forEach(function (s) { u[s] = 1; });
+      if (Object.keys(u).length === sigs.length) cen.push(i);
+    });
+    // E/Z 후보 — 고리 밖 이중결합, 양 끝 치환기가 서로 다름
+    mol.bonds.forEach(function (b, bi) {
+      if (b.arom || b.order !== 2 || b.inRing) return;
+      var A = mol.atoms[b.a], B = mol.atoms[b.b];
+      if (A.el !== "C" && A.el !== "N") return;
+      if (B.el !== "C" && B.el !== "N") return;
+      var na = A.nbrs.filter(function (n) { return n.atom !== b.b; });
+      var nb = B.nbrs.filter(function (n) { return n.atom !== b.a; });
+      if (!na.length || !nb.length) return;
+      var okA = na.length === 1 ? (A.h || 0) <= 1
+        : branchSig(mol, na[0].atom, b.a, 5) !== branchSig(mol, na[1].atom, b.a, 5);
+      var okB = nb.length === 1 ? (B.h || 0) <= 1
+        : branchSig(mol, nb[0].atom, b.b, 5) !== branchSig(mol, nb[1].atom, b.b, 5);
+      if (okA && okB) dbl.push(bi);
+    });
+    return { centers: cen, bonds: dbl };
+  }
+  function branchSig(mol, start, from, depth) {           // 가지의 생김새를 글자로 (같은 가지 판별용)
+    var sig = [], seen = {};
+    (function walk(i, prev, d) {
+      var a = mol.atoms[i];
+      sig.push(a.el + (a.arom ? "a" : "") + (a.charge || ""));
+      if (d <= 0) return;
+      var nx = a.nbrs.filter(function (n) { return n.atom !== prev; })
+        .map(function (n) { return [mol.atoms[n.atom].el, n.atom, n.bond.order]; })
+        .sort(function (x, y) { return x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : x[2] - y[2]; });
+      sig.push("(");
+      nx.forEach(function (n) { var k = i + ">" + n[1]; if (seen[k]) { sig.push("*"); return; } seen[k] = 1; walk(n[1], i, d - 1); });
+      sig.push(")");
+    })(start, from, depth);
+    return sig.join("");
+  }
+  function renderStereo() {
+    if (!cur || !cur.mol) { $("stereoCard").hidden = true; return; }
+    var pot = potentialStereo(cur.mol);
+    var n = pot.centers.length + pot.bonds.length;
+    $("stereoCard").hidden = n === 0;
+    if (!n) return;
+    stFor = cur.smiles;
+    // 먼저 찾은 자리를 보여주고, CIP 는 편집기 계산이 끝나면 채웁니다
+    paintStereo(pot, null);
+    if (!K) return;
+    var my = stFor;
+    Promise.resolve().then(function () { return K.indigo.calculateCip(K.editor.struct()); })
+      .then(function (out) {
+        if (stFor !== my) return;
+        var labs = { atoms: {}, bonds: {} }, i = 0, j = 0;
+        out.atoms.forEach(function (a) { if (a.cip) labs.atoms[i] = a.cip; i++; });
+        out.bonds.forEach(function (b) { if (b.cip) labs.bonds[j] = b.cip; j++; });
+        paintStereo(pot, labs);
+      }, function () {});
+  }
+  function paintStereo(pot, labs) {
+    var rows = [], nDef = 0;
+    pot.centers.forEach(function (i, k) {
+      var cip = labs && labs.atoms[i];
+      if (cip) nDef++;
+      rows.push({ t: T("비칭 탄소") + " " + (k + 1), cip: cip, what: cur.mol.atoms[i].el + (i + 1) });
+    });
+    pot.bonds.forEach(function (bi, k) {
+      var cip = labs && labs.bonds[bi];
+      if (cip) nDef++;
+      var b = cur.mol.bonds[bi];
+      rows.push({ t: T("이중결합") + " " + (k + 1), cip: cip, what: (b.a + 1) + "=" + (b.b + 1) });
+    });
+    var n = rows.length, total = Math.pow(2, n);
+    $("stereoPill").className = "pill " + (nDef === n ? "ok" : "warn");
+    $("stereoPill").textContent = nDef === n ? T("지정됨") : nDef + "/" + n + " " + T("지정됨");
+    $("stereoBody").innerHTML =
+      rows.map(function (r) {
+        return '<div class="mpo-row"><span>' + esc(r.t) + "<small>" + esc(r.what) + "</small></span>" +
+          '<span class="v">' + (r.cip ? "<b>" + esc(r.cip) + "</b>" : '<span style="color:var(--mc-muted)">' + T("지정 안 됨") + "</span>") + "</span></div>";
+      }).join("") +
+      '<div class="mpo-note" style="margin-top:6px">' + T("가능한 입체이성질체") + " <b>" + total + "</b>" +
+      (nDef < n ? " · " + T("지정 안 됨") + " " + (n - nDef) : "") + "</div>" +
+      '<button class="mc-btn sm" type="button" id="isoBtn" style="margin-top:4px">' + T("모든 이성질체 보기") + "</button>";
+    $("isoBtn").onclick = function () { showIsomers(pot); };
+  }
+
+  // ---------- 입체이성질체 그려 보기 ----------
+  function showIsomers(pot) {
+    if (!cur || !cur.mol || !K) return;
+    var v = Chem.stereoVariants(cur.mol, pot, 32);
+    var head = v.shown < v.total
+      ? T("개 중 ").replace(/^/, v.total + "").replace(/$/, v.shown + T("개만 보여요"))
+      : v.total + " " + T("가능한 입체이성질체");
+    modal('<header><h2>' + T("이 구조의 입체이성질체") + '</h2><div class="sub" id="isoSub">' + esc(head) + "</div></header>" +
+      '<div class="body"><div class="iso-grid" id="isoGrid"></div></div>' +
+      '<footer><span class="mc-sum" id="isoNote"></span><button class="mc-btn primary" type="button" data-a="no">' + T("닫기") + "</button></footer>",
+      function (d, close) {
+        d.querySelector('[data-a="no"]').onclick = close;
+        var grid = d.querySelector("#isoGrid"), seen = {}, rows = [], done = 0, mine = null;
+        // 편집기 호출은 한 번에 하나씩 (동시에 부르면 멈춰요)
+        Promise.resolve()
+          .then(function () { return K.indigo.convert(cur.molfile, { outputFormat: "chemical/x-daylight-smiles" }); })
+          .then(function (r) { mine = String((r && r.struct) || "").trim(); }, function () {})
+          .then(function () { return v.list.reduce(function (chain, item) {
+          return chain.then(function () {
+            if (!d.isConnected) return;
+            return K.indigo.convert(item.molfile, { outputFormat: "chemical/x-daylight-smiles" })
+              .then(function (r) {
+                var smi = String((r && r.struct) || "").trim();
+                if (!smi || seen[smi]) return;
+                seen[smi] = 1;
+                rows.push({ smi: smi, cur: smi === mine });
+              }, function () {})
+              .then(function () {
+                done++;
+                var sub = d.querySelector("#isoSub");
+                if (sub) sub.textContent = done + " / " + v.list.length;
+              });
+          });
+        }, Promise.resolve()); })
+        .then(function () {
+          if (!d.isConnected) return;
+          var sub = d.querySelector("#isoSub");
+          if (sub) sub.textContent = rows.length + (v.shown < v.total ? " / " + v.total : "");
+          grid.innerHTML = rows.map(function (r, i) {
+            return '<figure class="iso' + (r.cur ? " now" : "") + '" data-smi="' + esc(r.smi) + '">' +
+              '<div class="pic" data-pic="' + esc(r.smi) + '"></div>' +
+              '<figcaption><span class="cip" data-cip="' + i + '">…</span>' +
+              (r.cur ? '<b class="tag">' + T("지금 구조") + "</b>" : '<button class="mc-btn sm" type="button" data-load="' + esc(r.smi) + '">' + T("편집기로 보내기") + "</button>") +
+              "</figcaption></figure>";
+          }).join("");
+          grid.querySelectorAll("[data-pic]").forEach(function (el) { pic(el.getAttribute("data-pic"), el); });
+          grid.querySelectorAll("[data-load]").forEach(function (b) {
+            b.onclick = function () { K.setMolecule(b.dataset.load).then(schedule); close(); };
+          });
+          // R/S · E/Z 표시도 하나씩
+          rows.reduce(function (chain, r, i) {
+            return chain.then(function () {
+              if (!d.isConnected) return;
+              return K.indigo.calculateCip(r.smi)
+                .then(function (out) {
+                  var tags = [], ai = 0, bi = 0;
+                  out.atoms.forEach(function (a) { ai++; if (a.cip) tags.push(a.cip); });
+                  out.bonds.forEach(function (b2) { bi++; if (b2.cip) tags.push(b2.cip); });
+                  var el = grid.querySelector('[data-cip="' + i + '"]');
+                  if (el) el.textContent = tags.length ? "(" + tags.join(", ") + ")" : "–";
+                }, function () {
+                  var el = grid.querySelector('[data-cip="' + i + '"]');
+                  if (el) el.textContent = "–";
+                });
+            });
+          }, Promise.resolve());
+        });
+      });
+  }
+
+  function renderMpo() {
+    if (!cur) return;
+    if (mpoFor !== cur.smiles) { mpoFor = cur.smiles; $("inPka").value = ""; $("inLogd").value = ""; } // 구조가 바뀌면 입력값 비우기
+    var p = cur.props, r = mpoInputs(cur.smiles, p, cur.mol, $("inPka").value, $("inLogd").value);
+    cur.mpo = r;
+    $("mpoScore").innerHTML = mpoText(r) + " <small>/ 6</small>";
+    var show = r.total != null ? r.total : r.min;
+    $("mpoPill").className = "pill " + (r.total != null ? mpoCls(r.total) : (r.min >= 4 ? "ok" : "na"));
+    $("mpoPill").textContent = r.total != null ? (r.total >= 4 ? "≥ 4 좋음" : r.total >= 3 ? "보통" : "낮음") : (r.min >= 4 ? "최소 4 이상" : "값 입력 필요");
+    var rows = [
+      ["clogp", "cLogP", p.clogp, 2, "≤ 3 만점, ≥ 5 0점"],
+      ["clogd", "cLogD (pH 7.4)", r.logd, 2, "≤ 2 만점, ≥ 4 0점"],
+      ["mw", "MW", p.mw, 1, "≤ 360 만점, ≥ 500 0점"],
+      ["tpsa", "TPSA", p.tpsa, 1, "40–90 만점, < 20 또는 > 120 0점"],
+      ["hbd", "HBD", p.hbd, 0, "0 만점, ≥ 3.5 0점"],
+      ["pka", "pKa (염기)", r.ePka == null && !r.pkaUser ? null : r.pka, 1, "≤ 8 만점, ≥ 10 0점"]
+    ];
+    $("mpoRows").innerHTML = rows.map(function (x) {
+      var sc = r.parts[x[0]], miss = sc == null;
+      return '<div class="mpo-row' + (miss ? " miss" : "") + '"><span>' + x[1] + "<small>" + x[4] + '</small></span><span class="v">' + (x[2] == null ? "–" : f(x[2], x[3])) + '</span><span class="mpo-bar"><i style="width:' + (miss ? 0 : Math.round(sc * 100)) + '%"></i></span><span class="s">' + (miss ? "?" : f(sc, 2)) + "</span></div>";
+    }).join("");
+    // 예상값 카드
+    function est(label, val, dig, user, basis) {
+      return '<div class="e"><span>' + label + '<span class="tag">' + (user ? "직접 입력" : "예상") + "</span>" +
+        '<i>' + esc(basis) + "</i></span><b>" + (val == null ? "–" : f(val, dig)) + "</b></div>";
+    }
+    $("mpoEst").innerHTML =
+      est("pKa (가장 센 염기)", r.pkaUser ? r.pka : r.ePka, 1, r.pkaUser, r.pkaUser ? "넣어주신 값을 씁니다" : r.pkaBasis) +
+      est("cLogD (pH 7.4)", r.logd, 2, r.logdUser, r.logdUser ? "넣어주신 값을 씁니다" : r.logdBasis);
+    var notes = [];
+    var al = r.est.bases.concat(r.est.acids);
+    if (al.length > 1) notes.push("찾은 이온화 작용기: " + r.est.bases.map(function (b) { return b.label + " " + f(b.pka, 1); })
+      .concat(r.est.acids.map(function (a) { return a.label + " " + f(a.pka, 1); })).join(", "));
+    notes.push("<b>pKa·cLogD는 작용기별 기준값에 주변 원자의 전자 끄는 효과를 더한 경험 규칙 계산이에요.</b> 아는 약 27개로 맞춰봤을 때 평균 0.4 정도 차이가 났지만, 고리가 여럿 붙은 방향족 질소(예: 카페인)나 입체적으로 꼬인 아민은 2 이상 벌어질 수 있어요. 실험값이나 ACD·MarvinSketch 값이 있으면 아래에 넣어주세요.");
+    notes.push("cLogP는 이 프로그램의 Crippen 값이라 원 논문(BioByte ClogP)과 조금 다를 수 있어요. 4점 이상이 CNS 약물에 유리해요.");
+    $("mpoNote").innerHTML = notes.join("<br>");
+  }
+  ["inPka", "inLogd"].forEach(function (id) { $(id).addEventListener("input", function () { if (cur) renderMpo(); }); });
+
+  function addH(formula) { // 분자식에 H 하나 더하기 (양성자 첨가)
+    var m = formula.replace(/[+-]\d*$|\d*[+-]$/, "").match(/([A-Z][a-z]?)(\d*)/g) || [], c = {}, order = [];
+    m.forEach(function (t) { var mm = t.match(/([A-Z][a-z]?)(\d*)/); if (!c[mm[1]]) order.push(mm[1]); c[mm[1]] = (c[mm[1]] || 0) + (mm[2] ? +mm[2] : 1); });
+    c.H = (c.H || 0) + 1; if (order.indexOf("H") < 0) order.splice(order.indexOf("C") >= 0 ? 1 : 0, 0, "H");
+    return order.map(function (e) { return e + (c[e] > 1 ? c[e] : ""); }).join("");
+  }
+  document.querySelectorAll("[data-copy]").forEach(function (b) {
+    b.onclick = function () {
+      var t = $(b.dataset.copy).textContent;
+      var done = function () { toast("복사했어요"); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
+      function fallback() { var r = document.createRange(); r.selectNodeContents($(b.dataset.copy)); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) { toast("Ctrl+C로 복사해주세요"); } }
+    };
+  });
+  function download(name, text, type) {
+    var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: type || "text/plain" })); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function fname() { var c = $("sCode").value.trim(); return (c || "structure").replace(/[\\/:*?"<>|]/g, "_"); }
+  // ---------- 3D 보기 ----------
+  // 선택한 구조 하나만 3D 좌표를 만들어 보여줍니다. 편집기 기본 3D 버튼과 달리
+  // 2D 좌표를 그대로 띄우지 않고 실제로 입체 모양을 계산해요.
+  var ELCOL = { C: "#3c4248", H: "#c9ced4", N: "#2f6fd0", O: "#d33a2c", S: "#c8a21a", P: "#d9792c",
+    F: "#3fae6e", Cl: "#3aa05a", Br: "#9a5a2c", I: "#7a4bb5", B: "#c98f8f", Si: "#9a8f7a", Se: "#9a8420" };
+  function elcol(e) { return ELCOL[e] || "#7f8a94"; }
+  function open3d() {
+    if (!cur || !cur.mol) { toast(T("먼저 구조를 그려주세요")); return; }
+    var g = null, showH = false, ball = true, rx = -0.35, ry = 0.6, zoom = 1, drag = null;
+    var label = cur.groups.length > 1 ? T("구조 {n}").replace("{n}", cur.gi + 1) + " · " : "";
+    modal('<header><h2>' + esc(label + cur.props.formula) + '</h2><div class="sub" id="d3sub">' + T("3D 좌표를 만드는 중…") + '</div></header>' +
+      '<div class="body" style="padding:0"><canvas id="d3c" style="width:100%;height:380px;display:block;cursor:grab"></canvas></div>' +
+      '<footer><span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+      '<label class="f" style="flex-direction:row;align-items:center;gap:5px;font-size:12px"><input type="checkbox" id="d3h"> ' + T("수소 표시") + '</label>' +
+      '<label class="f" style="flex-direction:row;align-items:center;gap:5px;font-size:12px"><input type="checkbox" id="d3b" checked> ' + T("공-막대") + '</label>' +
+      '</span><span style="display:flex;gap:8px"><button class="mc-btn" type="button" data-a="re">' + T("다시 계산") + '</button>' +
+      '<button class="mc-btn" type="button" data-a="sdf">SDF</button>' +
+      '<button class="mc-btn primary" type="button" data-a="no">' + T("닫기") + '</button></span></footer>',
+      function (d, close) {
+        var cv = d.querySelector("#d3c"), ctx = cv.getContext("2d");
+        function fit() { var r = cv.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
+          cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+        function compute() {
+          d.querySelector("#d3sub").textContent = T("3D 좌표를 만드는 중…");
+          setTimeout(function () {
+            var t0 = Date.now();
+            g = Chem.embed3D(cur.mol);
+            d.querySelector("#d3sub").textContent = T("무거운 원자 {n}개 · 평면에서 {f}Å 벗어남 · {ms}ms")
+              .replace("{n}", g.atoms.filter(function (a) { return a.heavy; }).length)
+              .replace("{f}", g.flat.toFixed(2)).replace("{ms}", Date.now() - t0);
+            draw();
+          }, 20);
+        }
+        function draw() {
+          if (!g) return;
+          fit();
+          var W = cv.width / (Math.min(2, devicePixelRatio || 1)), H = cv.height / (Math.min(2, devicePixelRatio || 1));
+          ctx.clearRect(0, 0, W, H);
+          var use = g.atoms.map(function (a, i) { return { a: a, i: i }; }).filter(function (o) { return showH || o.a.heavy; });
+          if (!use.length) return;
+          var cosx = Math.cos(rx), sinx = Math.sin(rx), cosy = Math.cos(ry), siny = Math.sin(ry);
+          var P = {};
+          var rmax = 0;
+          use.forEach(function (o) { var a = o.a; rmax = Math.max(rmax, Math.hypot(a.x, a.y, a.z)); });
+          var scale = (Math.min(W, H) * 0.40 / (rmax || 1)) * zoom;
+          use.forEach(function (o) {
+            var a = o.a;
+            var x1 = a.x * cosy + a.z * siny, z1 = -a.x * siny + a.z * cosy;
+            var y2 = a.y * cosx - z1 * sinx, z2 = a.y * sinx + z1 * cosx;
+            P[o.i] = { x: W / 2 + x1 * scale, y: H / 2 - y2 * scale, z: z2, el: a.el };
+          });
+          var items = [];
+          g.bonds.forEach(function (b) {
+            var p = P[b.a], q = P[b.b]; if (!p || !q) return;
+            items.push({ z: (p.z + q.z) / 2 - 0.01, kind: "b", p: p, q: q, o: b.arom ? 1.5 : b.order });
+          });
+          use.forEach(function (o) { var p = P[o.i]; items.push({ z: p.z, kind: "a", p: p, el: o.a.el, h: !o.a.heavy }); });
+          items.sort(function (x, y) { return x.z - y.z; });
+          var rad = ball ? 0.30 : 0.14;
+          items.forEach(function (it) {
+            var depth = 1 / (1 + Math.exp(-(it.z) * 0.5));           // 뒤쪽은 조금 흐리게
+            ctx.globalAlpha = 0.45 + 0.55 * depth;
+            if (it.kind === "b") {
+              var mx = (it.p.x + it.q.x) / 2, my = (it.p.y + it.q.y) / 2;
+              var w = ball ? 5 : 7;
+              var dx = it.q.x - it.p.x, dy = it.q.y - it.p.y, L = Math.hypot(dx, dy) || 1;
+              var ox = -dy / L, oy = dx / L;
+              var offs = it.o >= 2 ? [-2.6, 2.6] : [0];
+              if (it.o === 3) offs = [-4.2, 0, 4.2];
+              if (it.o === 1.5) offs = [-2.6, 2.6];
+              offs.forEach(function (f, k) {
+                ctx.lineWidth = it.o === 1.5 && k === 1 ? w * 0.55 : w;
+                ctx.lineCap = "round";
+                ctx.strokeStyle = elcol(it.p.el);
+                ctx.beginPath(); ctx.moveTo(it.p.x + ox * f, it.p.y + oy * f); ctx.lineTo(mx + ox * f, my + oy * f); ctx.stroke();
+                ctx.strokeStyle = elcol(it.q.el);
+                ctx.beginPath(); ctx.moveTo(mx + ox * f, my + oy * f); ctx.lineTo(it.q.x + ox * f, it.q.y + oy * f); ctx.stroke();
+              });
+            } else {
+              var r = (it.h ? rad * 0.6 : rad) * scale * (it.el === "H" ? 0.7 : 1);
+              r = Math.max(2.5, Math.min(26, r));
+              var grd = ctx.createRadialGradient(it.p.x - r * 0.35, it.p.y - r * 0.35, r * 0.1, it.p.x, it.p.y, r);
+              grd.addColorStop(0, "#ffffff"); grd.addColorStop(0.35, elcol(it.el)); grd.addColorStop(1, elcol(it.el));
+              ctx.fillStyle = grd;
+              ctx.beginPath(); ctx.arc(it.p.x, it.p.y, r, 0, 6.2832); ctx.fill();
+            }
+          });
+          ctx.globalAlpha = 1;
+        }
+        cv.onmousedown = function (e) { drag = { x: e.clientX, y: e.clientY }; cv.style.cursor = "grabbing"; };
+        window.addEventListener("mousemove", onMove); window.addEventListener("mouseup", onUp);
+        function onMove(e) { if (!drag) return; ry += (e.clientX - drag.x) * 0.01; rx += (e.clientY - drag.y) * 0.01; drag = { x: e.clientX, y: e.clientY }; draw(); }
+        function onUp() { drag = null; cv.style.cursor = "grab"; }
+        cv.onwheel = function (e) { e.preventDefault(); zoom *= e.deltaY > 0 ? 0.92 : 1.08; zoom = Math.max(0.3, Math.min(5, zoom)); draw(); };
+        d.querySelector("#d3h").onchange = function () { showH = this.checked; draw(); };
+        d.querySelector("#d3b").onchange = function () { ball = this.checked; draw(); };
+        d.querySelector('[data-a="re"]').onclick = compute;
+        d.querySelector('[data-a="sdf"]').onclick = function () { if (g) download(fname() + "_3d.sdf", toSdf(g, fname()), "chemical/x-mdl-sdfile"); };
+        d.querySelector('[data-a="no"]').onclick = function () {
+          window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); close();
+        };
+        window.addEventListener("resize", draw);
+        compute();
+      });
+  }
+
+  function toSdf(g, name) {                       // 3D 좌표를 MOL/SDF 로 (다른 프로그램에 넘길 때)
+    var L = [name, "  MedChemOffice 3D", "", ""];
+    L[3] = String(g.atoms.length).padStart(3) + String(g.bonds.length).padStart(3) + "  0  0  0  0  0  0  0  0999 V2000";
+    g.atoms.forEach(function (a) {
+      L.push(a.x.toFixed(4).padStart(10) + a.y.toFixed(4).padStart(10) + a.z.toFixed(4).padStart(10) +
+        " " + (a.el + "  ").slice(0, 3) + " 0  0  0  0  0  0  0  0  0  0  0  0");
+    });
+    g.bonds.forEach(function (b) {
+      L.push(String(b.a + 1).padStart(3) + String(b.b + 1).padStart(3) +
+        String(b.arom ? 4 : b.order).padStart(3) + "  0  0  0  0");
+    });
+    L.push("M  END", "$$$$");
+    return L.join("\n");
+  }
+  $("view3d").onclick = open3d;
+  // 편집기 툴바의 3D 단추도 이 뷰어를 열도록 가로챕니다.
+  // 편집기 기본 3D 창은 2D 좌표를 그대로 띄워서 납작하고, 캔버스 전체를 보여줘요.
+  document.addEventListener("click", function (e) {
+    var b = e.target && e.target.closest && e.target.closest('[data-testid="3D Viewer button"]');
+    if (!b) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    open3d();
+  }, true);
+  ["pointerdown", "mousedown", "pointerup", "mouseup"].forEach(function (t) {
+    document.addEventListener(t, function (e) {
+      var b = e.target && e.target.closest && e.target.closest('[data-testid="3D Viewer button"]');
+      if (b) { e.preventDefault(); e.stopImmediatePropagation(); }
+    }, true);
+  });
+  $("dlMol").onclick = function () { if (cur) download(fname() + ".mol", cur.molfile, "chemical/x-mdl-molfile"); };
+  $("dlCdxml").onclick = function () {
+    if (!cur) return;
+    var p1 = cur.groups.length > 1
+      ? K.indigo.convert(cur.molfile, { outputFormat: "chemical/x-cdxml" }).then(function (r) { return r.struct; })
+      : K.getCDXml();
+    p1.then(function (x) { download(fname() + ".cdxml", x, "application/xml"); }, function () { toast("ChemDraw 형식으로 바꾸지 못했어요"); });
+  };
+
+  // ---------- 불러오기 ----------
+  function loadInto(text) {
+    $("inMsg").textContent = "";
+    text = String(text || "").trim(); if (!text) { $("inMsg").textContent = "SMILES나 MOL을 붙여넣어 주세요."; return Promise.resolve(); }
+    if (/\$\$\$\$/.test(text)) text = text.split("$$$$")[0];
+    return K.setMolecule(text).then(function () { toast("편집기에 넣었어요"); schedule(); }, function (e) { $("inMsg").textContent = "읽을 수 없는 구조예요. SMILES 철자나 파일 형식을 확인해주세요."; });
+  }
+  $("inBtn").onclick = function () { if (K) loadInto($("inTxt").value); };
+  $("inFile").onchange = function (e) {
+    var file = e.target.files[0]; if (!file || !K) return;
+    var rd = new FileReader(); rd.onload = function () { $("inTxt").value = String(rd.result).slice(0, 2000); loadInto(rd.result); }; rd.readAsText(file);
+    e.target.value = "";
+  };
+
+  // ---------- 저장 ----------
+  var DEF_TGT = Store.DEF_TGT;
+  function actsOf(c) { return Store.actsOf(c); }
+  function targets() { return Store.targets(); }
+  function tgtUnit(t) { return Store.tgtUnit(t); }
+  function findSame(s2, c2) { return Store.findSame(s2, c2); }
+  function codeClash(s2, c2) { return Store.codeClash(s2, c2); }
+  function mergeInto(c, v) { return Store.mergeInto(c, v); }
+  function autoName(k) { return Store.autoName(k); }
+  function refreshTgtList() {
+    $("tgtList").innerHTML = targets().filter(function (t) { return t !== DEF_TGT; })
+      .map(function (t) { return '<option value="' + esc(t) + '">'; }).join("");
+  }
+  function modal(html, wire) {
+    var d = document.createElement("div"); d.className = "mc mc-modal";
+    d.innerHTML = '<div class="mc-mbox">' + html + "</div>";
+    d.addEventListener("click", function (e) { if (e.target === d) d.remove(); });
+    document.body.appendChild(d);
+    wire(d, function () { d.remove(); });
+    if (window.I18N) I18N.apply(d);
+    return d;
+  }
+  $("saveAllBtn").onclick = function () {
+    if (!cur || cur.groups.length < 2) return;
+    var base = $("sCode").value.trim(), n = cur.groups.length;
+    var rows = cur.groups.map(function (g, i) {
+      var nm = base ? base + "-" + (i + 1) : autoName(i);
+      return '<div class="ms-row"><span class="f"><b>구조 ' + (i + 1) + "</b>" + esc(g.props.formula) + " · " + f(g.props.mw, 1) + "</span>" +
+        '<input type="text" data-nm="' + i + '" value="' + esc(nm) + '" placeholder="이름">' +
+        '<input type="number" step="any" data-ac="' + i + '" placeholder="활성값"></div>';
+    }).join("");
+    modal('<header><h2>' + n + '개 구조를 각각 저장</h2><div class="sub">이름을 비우면 화합물-1처럼 자동으로 붙어요. 활성값 단위는 아래에서 함께 정해요.</div></header>' +
+      '<div class="body">' + rows + '</div>' +
+      '<footer><label class="f" style="flex-direction:row;align-items:center;gap:6px">단위 <select id="msUnit" style="width:auto"><option>nM</option><option>µM</option><option>%</option></select></label>' +
+      '<span style="display:flex;gap:8px"><button class="mc-btn" type="button" data-a="no">취소</button><button class="mc-btn primary" type="button" data-a="yes">' + n + '개 저장</button></span></footer>',
+      function (d, close) {
+        d.querySelector("#msUnit").value = $("sUnit").value;
+        d.querySelector('[data-a="no"]').onclick = close;
+        d.querySelector('[data-a="yes"]').onclick = function () {
+          var unit = d.querySelector("#msUnit").value, tgt = $("sTgt").value.trim(), memo = $("sMemo").value.trim(), added = 0, merged = 0, bad = 0;
+          cur.groups.forEach(function (g, i) {
+            if (!g.smiles) { bad++; return; }
+            var nm = d.querySelector('[data-nm="' + i + '"]').value.trim() || autoName(0);
+            var av = d.querySelector('[data-ac="' + i + '"]').value;
+            var hit = findSame(g.smiles, nm);                        // 이미 있는 물질이면 그 행에 추가
+            if (hit >= 0) { mergeInto(list[hit], { act: av, unit: unit, tgt: tgt, memo: memo }); merged++; return; }
+            var row = { id: "c" + Date.now().toString(36) + i, code: nm, smiles: g.smiles, act: null, unit: null, acts: {}, memo: memo, created: Date.now() + i, pka: null, logd: null };
+            if (av !== "") row.acts[tgt || DEF_TGT] = { v: +av, u: unit };
+            list.push(row);
+            added++;
+          });
+          saveList(); renderCount(); renderList && renderList(); close();
+          toast([added ? added + "개 저장" : "", merged ? merged + "개는 기존 행에 추가" : "", bad ? bad + "개는 읽지 못했어요" : ""]
+            .filter(Boolean).join(" · "));
+          clearSaveForm();
+        };
+      });
+  };
+  function clearSaveForm() { $("sCode").value = ""; $("sAct").value = ""; $("sMemo").value = ""; }  // 타깃은 연달아 입력하는 경우가 많아 그대로 둬요
+  $("saveBtn").onclick = function () {
+    if (!cur) { toast("먼저 구조를 그려주세요"); return; }
+    if (!cur.smiles) { toast("이 구조를 읽지 못했어요. 다시 그려주세요."); return; }
+    var typed = $("sCode").value.trim();
+    var vals = { act: $("sAct").value, unit: $("sUnit").value, tgt: $("sTgt").value.trim(), memo: $("sMemo").value.trim(),
+      pka: $("inPka").value === "" ? null : +$("inPka").value, logd: $("inLogd").value === "" ? null : +$("inLogd").value };
+
+    var clash = codeClash(cur.smiles, typed);                        // 같은 코드인데 구조가 다를 때
+    if (clash >= 0) {
+      var alt = autoName(0);
+      modal('<header><h2>' + esc(typed) + '은(는) 다른 구조로 저장돼 있어요</h2>' +
+        '<div class="sub">같은 코드를 쓰면 어느 쪽이 맞는지 알 수 없어서 합치지 않았어요. 어떻게 할까요?</div></header>' +
+        '<footer><span></span><span style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button class="mc-btn" type="button" data-a="no">취소</button>' +
+        '<button class="mc-btn" type="button" data-a="new">' + esc(alt) + '(으)로 따로 저장</button>' +
+        '<button class="mc-btn primary" type="button" data-a="over">기존 ' + esc(typed) + ' 구조를 이것으로 바꾸기</button>' +
+        "</span></footer>", function (d, close) {
+          d.querySelector('[data-a="no"]').onclick = close;
+          d.querySelector('[data-a="new"]').onclick = function () { close(); doSave(alt, true); };
+          d.querySelector('[data-a="over"]').onclick = function () {
+            close();
+            var c = list[clash]; c.smiles = cur.smiles; mergeInto(c, vals);
+            saveList(); renderCount(); renderList && renderList();
+            toast(typed + " 구조를 바꿨어요"); clearSaveForm();
+          };
+        });
+      return;
+    }
+    doSave(typed, false);
+
+    function doSave(code, force) {
+      var hit = force ? -1 : findSame(cur.smiles, code);             // 같은 물질이 이미 있으면 그 행에 추가
+      if (hit >= 0) {
+        var c = list[hit], ch = mergeInto(c, vals);
+        saveList(); renderCount(); renderList && renderList();
+        toast(ch.length ? c.code + " · " + ch.join(" · ") : c.code + "은(는) 이미 같은 내용으로 저장돼 있어요");
+        clearSaveForm(); return;
+      }
+      var nm = code || autoName(0);
+      var fresh = { id: "c" + Date.now().toString(36), code: nm, smiles: cur.smiles,
+        act: null, unit: null, acts: {}, memo: vals.memo, created: Date.now(),
+        pka: vals.pka, logd: vals.logd };
+      if (vals.act !== "" && vals.act != null) fresh.acts[vals.tgt || DEF_TGT] = { v: +vals.act, u: vals.unit };
+      list.push(fresh);
+      saveList(); renderCount(); renderList && renderList();
+      toast(nm + " 저장했어요"); clearSaveForm();
+    }
+  };
+  function renderCount() {                       // 목록 화면은 도구 4(SAR)로 옮겨가요
+    var el = $("listSum"); if (!el) return;
+    el.textContent = list.length ? T("저장된 화합물 ") + list.length + T("개") : "";
+  }
+
+  // ---------- 목록 ----------
+  var cache = {}; // smiles -> {mol, props, fp, err}
+  function info(smi) {
+    if (cache[smi]) return cache[smi];
+    var o = {};
+    try {
+      o.mol = Chem.parseSmiles(smi); o.props = Chem.props(o.mol); o.fp = Chem.morgan(o.mol);
+      try { o.alerts = Chem.alerts(o.mol, o.props); } catch (e2) { o.alerts = []; }
+      o.aHigh = o.alerts.filter(function (x) { return x.sev === "high"; }).length;
+      o.aMid = o.alerts.filter(function (x) { return x.sev === "mid"; }).length;
+    } catch (e) { o.err = e.message; }
+    return (cache[smi] = o);
+  }
+  var pics = {}, picQ = Promise.resolve();
+  function pic(smi, el) { // 그림은 한 번에 하나씩 만들기
+    if (pics[smi]) { el.innerHTML = pics[smi]; return; }
+    if (!K) return;
+    picQ = picQ.then(function () {
+      if (pics[smi]) return;
+      return K.generateImage(smi, { outputFormat: "svg" }).then(function (b) { return b.text(); }).then(function (svg) {
+        // 그림마다 따로 보이도록 img로 넣기 (SVG 안의 글자 모양 id가 서로 섞이지 않게)
+        pics[smi] = '<img alt="" src="data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '">';
+      });
+    }).then(function () {
+      document.querySelectorAll('[data-pic]').forEach(function (x) { if (x.getAttribute("data-pic") === smi && pics[smi]) x.innerHTML = pics[smi]; });
+    }, function () { el.textContent = "그림 없음"; });
+  }
+  var ref = null, sortKey = "created", sortDir = 1, subQuery = "";
+  // 활성 열은 저장된 타깃만큼 그때그때 만들어요
+  function COLS() {
+    var out = [["pic", "구조", "l"], ["code", "코드", "l"]];
+    targets().forEach(function (t) {
+      var u = tgtUnit(t);
+      out.push(["act:" + t, '<span class="tn">' + esc(t) + '<button type="button" class="ren" data-ren="' + esc(t) + '" title="열 이름 바꾸기">\u270e</button></span>' + (u ? "<small>" + esc(u) + "</small>" : ""), "tgt"]);
+    });
+    return out.concat([["sim", "유사도"], ["mw", "MW"], ["clogp", "cLogP"], ["tpsa", "TPSA"],
+      ["hbd", "HBD"], ["hba", "HBA"], ["rotb", "RotB"], ["lip", "Ro5"], ["mpo", "CNS MPO"], ["alert", "경고"], ["memo", "메모", "l"], ["act2", "", "l"]]);
+  }
+  function val(c, k) {
+    var o = info(c.smiles), p = o.props || {};
+    if (k === "code") return c.code; if (k === "memo") return c.memo; if (k === "created") return c.created;
+    if (k === "act") return c.act == null ? Infinity : c.act * (c.unit === "µM" ? 1000 : 1);
+    if (k === "sim") return ref && o.fp ? Chem.tanimoto(ref.fp, o.fp) : -1;
+    if (k === "lip") return p.lipinskiViolations;
+    if (k === "mpo") { var r = compMpo(c); return r ? r.min : null; }
+    if (k === "alert") return (o.aHigh || 0) * 100 + (o.aMid || 0);
+    if (k.slice(0, 4) === "act:") { var a = actsOf(c)[k.slice(4)]; return a ? a.v : null; }
+    return p[k];
+  }
+  function compMpo(c) { var o = info(c.smiles); if (!o.mol) return null; return mpoInputs(c.smiles, o.props, o.mol, c.pka, c.logd); }
+  function renderList() {
+    if (!$("tbl")) { renderCount(); return; }   // 목록 표는 도구 4(SAR)에서
+    renderCount(); refreshTgtList();
+    var q = null, qErr = "";
+    if (subQuery) { try { q = Chem.parseSmiles(subQuery); } catch (e) { qErr = "검색 SMILES를 읽을 수 없어요: " + e.message; } }
+    var rows = list.filter(function (c) { if (!q) return true; var o = info(c.smiles); return o.mol && Chem.substructure(q, o.mol); });
+    rows.sort(function (a, b) {
+      var x = val(a, sortKey), y = val(b, sortKey);
+      if (typeof x === "string" || typeof y === "string") return sortDir * String(x == null ? "" : x).localeCompare(String(y == null ? "" : y), "ko");
+      if (x == null && y == null) return 0;
+      if (x == null) return 1;                       // 값이 없는 칸은 어느 쪽으로 정렬해도 아래로
+      if (y == null) return -1;
+      return sortDir * (x - y);
+    });
+    $("listSum").textContent = qErr || (list.length ? (q ? rows.length + "개 찾음 (전체 " + list.length + "개)" : "전체 " + list.length + "개") + (ref ? " · 유사도 기준: " + ref.smiles : "") + " · 열 제목을 누르면 정렬돼요" : "");
+    var cols = COLS();
+    var head = "<thead><tr>" + cols.map(function (c) {
+      if (c[0] === "sim" && !ref) return "";
+      var s = sortKey === c[0] ? (sortDir > 0 ? "ascending" : "descending") : "none";
+      return '<th class="' + (c[2] || "") + '" data-k="' + c[0] + '" aria-sort="' + s + '">' + c[1] + "</th>";
+    }).join("") + "</tr></thead>";
+    if (!list.length) {
+      $("tbl").innerHTML = '<tbody><tr><td class="txt l" style="padding:24px;color:var(--mc-muted)">아직 저장한 화합물이 없어요. 구조 탭에서 구조를 그리고 <b>목록에 저장</b>을 누르거나, 위의 <b>CSV·SMILES 불러오기</b>로 한 번에 넣을 수 있어요.</td></tr></tbody>';
+      return;
+    }
+    var tg = targets();
+    var body = rows.map(function (c) {
+      var o = info(c.smiles), p = o.props || {};
+      if (o.err) return '<tr><td></td><td class="txt l">' + esc(c.code) + '</td><td colspan="' + (11 + tg.length) + '" class="txt l" style="color:var(--mc-bad)">계산할 수 없는 구조예요 (' + esc(o.err) + ')</td><td class="l"><button class="mc-btn sm danger" data-del="' + c.id + '">삭제</button></td></tr>';
+      var sim = ref ? val(c, "sim") : null;
+      return "<tr>" +
+        '<td class="l"><div class="pic" data-pic="' + esc(c.smiles) + '"></div></td>' +
+        '<td class="txt l"><b>' + esc(c.code) + "</b></td>" +
+        tg.map(function (t) {
+          var a = actsOf(c)[t];
+          return '<td class="tgt">' + (a == null ? '<span class="na">–</span>' : esc(String(a.v)) + (tgtUnit(t) ? "" : ' <small>' + esc(a.u) + "</small>")) + "</td>";
+        }).join("") +
+        (ref ? '<td><span class="simbar"><i style="width:' + Math.round(sim * 100) + '%"></i></span>' + f(sim, 2) + "</td>" : "") +
+        '<td class="' + (p.mw > 500 ? "hi" : "") + '">' + f(p.mw, 1) + "</td>" +
+        '<td class="' + (p.clogp > 5 ? "hi" : "") + '">' + f(p.clogp, 2) + "</td>" +
+        '<td class="' + (p.tpsa > 140 ? "hi" : "") + '">' + f(p.tpsa, 1) + "</td>" +
+        "<td>" + p.hbd + "</td><td>" + p.hba + "</td>" +
+        '<td class="' + (p.rotb > 10 ? "hi" : "") + '">' + p.rotb + "</td>" +
+        '<td><span class="pill ' + (p.lipinskiViolations <= 1 ? "ok" : "bad") + '">' + (p.lipinskiViolations === 0 ? "통과" : "위반 " + p.lipinskiViolations) + "</span></td>" +
+        '<td title="주의 ' + (o.aHigh || 0) + '개 · 보통 ' + (o.aMid || 0) + '개 (누르면 위험 신호 탭에서 자세히)">' +
+          (o.aHigh ? '<span class="sev high">' + o.aHigh + "</span> " : "") +
+          (o.aMid ? '<span class="sev mid">' + o.aMid + "</span>" : (o.aHigh ? "" : '<span class="sev low">0</span>')) + "</td>" +
+        (function () { var r = compMpo(c); if (!r) return "<td>–</td>"; return '<td title="' + (r.missing.length ? "pKa·cLogD를 넣으면 하나의 점수로 정해져요" : "") + '"><span class="pill ' + (r.total != null ? mpoCls(r.total) : "na") + '">' + mpoText(r) + "</span></td>"; })() +
+        '<td class="txt l" style="max-width:220px">' + esc(c.memo) + "</td>" +
+        '<td class="l" style="white-space:nowrap"><button class="mc-btn sm" data-open="' + c.id + '">편집기로</button> <button class="mc-btn sm danger" data-del="' + c.id + '">삭제</button></td>' +
+        "</tr>";
+    }).join("");
+    $("tbl").innerHTML = head + "<tbody>" + body + "</tbody>";
+    $("tbl").querySelectorAll("[data-ren]").forEach(function (btn) {
+      btn.onclick = function (ev) { ev.stopPropagation(); renameTarget(btn.dataset.ren); };
+    });
+    $("tbl").querySelectorAll("th[data-k]").forEach(function (th) {
+      if (th.dataset.k === "pic" || th.dataset.k === "act2") return;  // 타깃 열은 정렬돼요
+      th.onclick = function () { var k = th.dataset.k; if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = k === "sim" ? -1 : 1; } renderList(); };
+    });
+    $("tbl").querySelectorAll("[data-pic]").forEach(function (el) { pic(el.getAttribute("data-pic"), el); });
+    $("tbl").querySelectorAll("[data-open]").forEach(function (b) { b.onclick = function () { var c = list.filter(function (x) { return x.id === b.dataset.open; })[0]; if (!c || !K) return; goTab("draw"); K.setMolecule(c.smiles).then(schedule); $("sCode").value = c.code; }; });
+    if (window.I18N) I18N.apply($("list"));
+    $("tbl").querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { var c = list.filter(function (x) { return x.id === b.dataset.del; })[0]; if (!c) return; if (b.dataset.sure) { Store.remove(c); saveList(); renderList(); toast("지웠어요"); } else { b.dataset.sure = "1"; b.textContent = "정말 삭제"; setTimeout(function () { if (b.isConnected) { delete b.dataset.sure; b.textContent = "삭제"; } }, 3000); } }; });
+  }
+  // 열 머리글의 연필을 누르면 그 타깃 이름을 모든 화합물에서 한 번에 바꿔요
+  function renameTarget(from) {
+    var n = list.filter(function (c) { return actsOf(c)[from] != null; }).length;
+    modal('<header><h2>열 이름 바꾸기</h2><div class="sub">' + esc(from) + " 열에 값이 있는 화합물 " + n + "개가 함께 바뀌어요.</div></header>" +
+      '<div class="body"><label class="f">새 이름<input type="text" id="rnNew" value="' + esc(from) + '"></label></div>' +
+      '<footer><span></span><span style="display:flex;gap:8px"><button class="mc-btn" type="button" data-a="no">취소</button>' +
+      '<button class="mc-btn primary" type="button" data-a="yes">바꾸기</button></span></footer>',
+      function (d, close) {
+        var inp = d.querySelector("#rnNew");
+        inp.focus(); inp.select();
+        inp.onkeydown = function (e) { if (e.key === "Enter") d.querySelector('[data-a="yes"]').click(); };
+        d.querySelector('[data-a="no"]').onclick = close;
+        d.querySelector('[data-a="yes"]').onclick = function () {
+          var to = inp.value.trim();
+          if (!to || to === from) { close(); return; }
+          var kept = Store.renameTarget(from, to);
+          saveList(); renderList(); close();
+          toast(from + " → " + to + (kept ? " · " + to + "에 값이 이미 있던 " + kept + "개는 그대로 뒀어요" : ""));
+        };
+      });
+  }
+
+  // ---------- CSV ----------
+  function csvCell(v) { v = v == null ? "" : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  $("csvOut").onclick = function () {
+    if (!list.length) { toast("내보낼 화합물이 없어요"); return; }
+    var tg = targets();
+    var hdr = ["code", "smiles"].concat(tg.map(function (t) { var u = tgtUnit(t); return t + (u ? " (" + u + ")" : ""); })).concat(["memo", "formula", "MW", "exact_mass", "cLogP", "TPSA", "HBD", "HBA", "NHOH", "NO", "RotB", "MR", "heavy_atoms", "rings", "aromatic_rings", "Fsp3", "Lipinski_violations", "Veber", "pKa", "cLogD", "CNS_MPO", "CNS_MPO_min", "CNS_MPO_max", "alerts_high", "alerts_mid", "alert_names"]);
+    var lines = [hdr.join(",")].concat(list.map(function (c) {
+      var p = info(c.smiles).props || {};
+      return [c.code, c.smiles].concat(tg.map(function (t) {
+        var a = actsOf(c)[t]; return a == null ? "" : (tgtUnit(t) ? a.v : a.v + " " + a.u);
+      })).concat([c.memo, p.formula, f(p.mw, 2), f(p.exact, 4), f(p.clogp, 2), f(p.tpsa, 2), p.hbd, p.hba, p.nhoh, p.no, p.rotb, f(p.mr, 2), p.heavy, p.rings, p.aromRings, f(p.fsp3, 3), p.lipinskiViolations, p.veber ? "pass" : "fail"]).concat((function () { var r = compMpo(c); return r ? [c.pka, c.logd, r.total == null ? "" : f(r.total, 2), f(r.min, 2), f(r.max, 2)] : ["", "", "", "", ""]; })()).concat([info(c.smiles).aHigh, info(c.smiles).aMid, (info(c.smiles).alerts || []).filter(function (x) { return x.sev !== "low"; }).map(function (x) { return x.name; }).join("; ")]).map(csvCell).join(",");
+    }));
+    var d = new Date(), stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+    download("compounds_" + stamp + ".csv", "﻿" + lines.join("\r\n"), "text/csv");
+  };
+  function parseCsv(t) {
+    var rows = [], row = [], cell = "", q = false;
+    for (var i = 0; i < t.length; i++) {
+      var ch = t[i];
+      if (q) { if (ch === '"') { if (t[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; continue; }
+      if (ch === '"') q = true; else if (ch === "," || ch === "\t") { row.push(cell); cell = ""; } else if (ch === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; } else if (ch !== "\r") cell += ch;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (x) { return x.trim(); }); });
+  }
+
+  // =====================================================================
+  // 도구상자 옮기기
+  // =====================================================================
+  var TB = [
+    { id: "top-toolbar", name: "위쪽 도구 (파일·편집)" },
+    { id: "left-toolbar", name: "왼쪽 도구 (그리기)" },
+    { id: "bottom-toolbar", name: "아래 도구 (고리)" },
+    { id: "right-toolbar", name: "오른쪽 도구 (원자)" }
+  ];
+  var POSKEY = "medchem-office-toolbar-pos-v1", pos = {};
+  try { pos = JSON.parse(localStorage.getItem(POSKEY) || "{}") || {}; } catch (e) { pos = {}; }
+  var posStyle = document.createElement("style"); document.head.appendChild(posStyle);
+  function applyPos() {
+    posStyle.textContent = TB.map(function (t) {
+      var o = pos[t.id]; if (!o || (!o.x && !o.y)) return "";
+      return '#root [data-testid="' + t.id + '"]{transform:translate(' + o.x + "px," + o.y + "px)!important;position:relative;z-index:30;}" +
+        (t.id === "left-toolbar" || t.id === "right-toolbar" ? '#root [data-testid="' + t.id + '"]{height:auto!important;}' : "");
+    }).join("");
+  }
+  function savePos() { try { localStorage.setItem(POSKEY, JSON.stringify(pos)); } catch (e) {} }
+  function visibleTb(id) { return Array.prototype.find.call(document.querySelectorAll('#root [data-testid="' + id + '"]'), function (e) { var r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; }); }
+  function drawFrames() {
+    var layer = $("moveLayer"), wrap = $("kwrap").getBoundingClientRect();
+    layer.querySelectorAll(".mv-frame").forEach(function (f) { f.remove(); });
+    TB.forEach(function (t) {
+      var el = visibleTb(t.id); if (!el) return;
+      // 도구 단추가 실제로 있는 범위만 (빈 여백 제외)
+      var r = el.getBoundingClientRect(), kids = el.querySelectorAll("button,[role=button]"), x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+      Array.prototype.forEach.call(kids, function (k) { var b = k.getBoundingClientRect(); if (!b.width) return; x1 = Math.min(x1, b.left); y1 = Math.min(y1, b.top); x2 = Math.max(x2, b.right); y2 = Math.max(y2, b.bottom); });
+      if (x1 === Infinity) { x1 = r.left; y1 = r.top; x2 = r.right; y2 = r.bottom; }
+      var f = document.createElement("div"); f.className = "mv-frame"; f.dataset.id = t.id;
+      f.style.left = (x1 - wrap.left - 4) + "px"; f.style.top = (y1 - wrap.top - 4) + "px";
+      f.style.width = (x2 - x1 + 8) + "px"; f.style.height = (y2 - y1 + 8) + "px";
+      f.innerHTML = "<span>" + t.name + "</span>";
+      layer.appendChild(f);
+      dragFrame(f, t.id);
+    });
+  }
+  function dragFrame(f, id) {
+    f.addEventListener("pointerdown", function (e) {
+      e.preventDefault(); f.setPointerCapture(e.pointerId);
+      var sx = e.clientX, sy = e.clientY, o = pos[id] || { x: 0, y: 0 }, ox = o.x, oy = o.y;
+      var fl = parseFloat(f.style.left), ft = parseFloat(f.style.top), W = $("kwrap").clientWidth, Hh = $("kwrap").clientHeight;
+      var fw = f.offsetWidth, fh = f.offsetHeight;
+      function mv(ev) {
+        var dx = ev.clientX - sx, dy = ev.clientY - sy;
+        dx = Math.max(-fl, Math.min(W - fw - fl, dx)); dy = Math.max(-ft, Math.min(Hh - fh - ft, dy)); // 편집 화면 밖으로 못 나가게
+        f.style.transform = "translate(" + dx + "px," + dy + "px)";
+        pos[id] = { x: Math.round(ox + dx), y: Math.round(oy + dy) }; applyPos();
+      }
+      function up() { f.removeEventListener("pointermove", mv); f.removeEventListener("pointerup", up); f.removeEventListener("pointercancel", up); savePos(); drawFrames(); }
+      f.addEventListener("pointermove", mv); f.addEventListener("pointerup", up); f.addEventListener("pointercancel", up);
+    });
+  }
+  function setMoveMode(on) {
+    $("moveLayer").hidden = !on; $("mvBtn").setAttribute("aria-pressed", String(on));
+    if (on) drawFrames();
+  }
+  $("mvBtn").onclick = function () { setMoveMode($("moveLayer").hidden); };
+  $("mvDone").onclick = function () { setMoveMode(false); toast("도구상자 위치를 저장했어요"); };
+  $("mvReset").onclick = function () { pos = {}; savePos(); applyPos(); setTimeout(drawFrames, 30); toast("처음 위치로 돌렸어요"); };
+  window.addEventListener("resize", function () { if (!$("moveLayer").hidden) drawFrames(); });
+
+  // =====================================================================
+  // 단축키
+  // =====================================================================
+  var ACTIONS = [
+    ["파일·편집", [
+      ["clear-canvas", "새로 그리기 (모두 지우기)"], ["open-file-button", "파일 열기"], ["save-file-button", "다른 형식으로 저장"],
+      ["copy-button", "복사"], ["paste-button", "붙여넣기"], ["cut-button", "잘라내기"], ["undo", "실행 취소"], ["redo", "다시 실행"],
+      ["Aromatize button", "방향족으로 표시"], ["Dearomatize button", "케쿨레로 표시"], ["Layout button", "자동 배치 (Layout)"], ["Clean Up button", "구조 다듬기 (Clean Up)"],
+      ["Calculate CIP button", "R/S·E/Z 표시"], ["Check Structure button", "구조 검사"], ["Calculated Values button", "계산값 창"],
+      ["Add/Remove explicit hydrogens button", "수소 보이기/숨기기"], ["3D Viewer button", "3D 보기"], ["settings-button", "편집기 설정"]
+    ]],
+    ["선택·지우기", [
+      ["hand", "손 (화면 이동)"], ["select-rectangle", "사각형 선택", "select"], ["select-lasso", "올가미 선택", "select"], ["select-fragment", "조각 선택", "select"], ["erase", "지우개"]
+    ]],
+    ["결합", [
+      ["bond-single", "단일 결합", "bonds"], ["bond-double", "이중 결합", "bonds"], ["bond-triple", "삼중 결합", "bonds"], ["bond-aromatic", "방향족 결합", "bonds"],
+      ["bond-up", "쐐기 결합 (위)", "bonds"], ["bond-down", "점선 쐐기 (아래)", "bonds"], ["bond-updown", "물결 결합 (위/아래)", "bonds"], ["bond-crossed", "이중 결합 (cis/trans 모름)", "bonds"],
+      ["bond-any", "아무 결합", "bonds"], ["bond-dative", "배위 결합", "bonds"], ["bond-hydrogen", "수소 결합", "bonds"], ["chain", "사슬"]
+    ]],
+    ["원자", [
+      ["C-button", "탄소 C"], ["N-button", "질소 N"], ["O-button", "산소 O"], ["S-button", "황 S"], ["F-button", "플루오린 F"], ["Cl-button", "염소 Cl"],
+      ["Br-button", "브로민 Br"], ["I-button", "아이오딘 I"], ["P-button", "인 P"], ["H-button", "수소 H"], ["period-table", "주기율표"], ["any-atom", "아무 원자"]
+    ]],
+    ["고리", [
+      ["template-0", "벤젠"], ["template-2", "사이클로헥산"], ["template-3", "사이클로펜탄"], ["template-1", "사이클로펜타다이엔"], ["template-4", "사이클로프로판"],
+      ["template-5", "사이클로부탄"], ["template-6", "사이클로헵탄"], ["template-7", "사이클로옥탄"], ["template-lib", "구조 라이브러리"]
+    ]],
+    ["기타 도구", [
+      ["charge-plus", "전하 +"], ["charge-minus", "전하 −"], ["enhanced-stereo", "입체 화학"], ["sgroup", "S-그룹"], ["rgroup-label", "R-그룹 표시"],
+      ["rgroup-fragment", "R-그룹 조각", "rgroup"], ["rgroup-attpoints", "연결점", "rgroup"], ["reaction-plus", "반응 +"], ["reaction-arrow-open-angle", "반응 화살표"],
+      ["reaction-arrow-retrosynthetic", "역합성 화살표", "arrows"], ["reaction-arrow-equilibrium-open-angle", "평형 화살표", "arrows"], ["reaction-automap", "자동 원자 매핑", "reaction-mapping-tools"],
+      ["text", "글상자"], ["shape-rectangle", "사각형", "shapes"], ["shape-ellipse", "타원", "shapes"]
+    ]],
+    ["의약화학 오피스", [
+      ["@select-current", "그리던 구조 선택"], ["@copy-smiles", "SMILES 복사"], ["@copy-hrms", "HRMS 문구 복사"], ["@save-list", "화합물 목록에 저장"], ["@focus-pka", "pKa 입력칸으로 이동"]
+    ]]
+  ];
+  var ACT = {}; ACTIONS.forEach(function (g) { g[1].forEach(function (a) { ACT[a[0]] = { id: a[0], label: a[1], drop: a[2] || null, group: g[0] }; }); });
+  var HKKEY = "medchem-office-hotkeys-v1", hk = {};
+  try { hk = JSON.parse(localStorage.getItem(HKKEY) || "{}") || {}; } catch (e) { hk = {}; }
+  function saveHk() { try { localStorage.setItem(HKKEY, JSON.stringify(hk)); } catch (e) {} }
+  function codeName(code) {
+    if (/^Key[A-Z]$/.test(code)) return code.slice(3);
+    if (/^Digit\d$/.test(code)) return code.slice(5);
+    if (/^Numpad\d$/.test(code)) return code.slice(6);
+    var map = { Minus: "-", Equal: "=", BracketLeft: "[", BracketRight: "]", Semicolon: ";", Quote: "'", Comma: ",", Period: ".", Slash: "/", Backslash: "\\", Backquote: "`", Space: "Space", Delete: "Del", Backspace: "Backspace", Enter: "Enter", Tab: "Tab", Insert: "Ins", Home: "Home", End: "End", PageUp: "PgUp", PageDown: "PgDn", ArrowUp: "↑", ArrowDown: "↓", ArrowLeft: "←", ArrowRight: "→", NumpadAdd: "+", NumpadSubtract: "-", NumpadMultiply: "*", NumpadDivide: "/" };
+    if (map[code]) return map[code];
+    if (/^F\d{1,2}$/.test(code)) return code;
+    return null;
+  }
+  function comboOf(e) {
+    var k = codeName(e.code); if (!k) return null;
+    return (e.ctrlKey || e.metaKey ? "Ctrl+" : "") + (e.altKey ? "Alt+" : "") + (e.shiftKey ? "Shift+" : "") + k;
+  }
+  // 편집기 기본 단축키 (단추 설명의 괄호 안)
+  var defaults = {};
+  // 펼침 메뉴 안에 숨어 있는 도구의 기본 단축키 (Ketcher 3.18)
+  var DROP_DEF = { "bond-single": "1", "bond-double": "2", "bond-triple": "3", "bond-aromatic": "4", "bond-any": "0", "bond-up": "1", "bond-down": "1", "bond-updown": "1", "bond-crossed": "2",
+    "select-lasso": "Shift+Tab", "select-fragment": "Shift+Tab", "rgroup-fragment": "Ctrl+Shift+R", "rgroup-attpoints": "Ctrl+R" };
+  // ChemDraw 기본 단축키 (ChemDraw 21 사용설명서의 Hotkeys 표)
+  // ChemDraw 는 원자 위냐 결합 위냐에 따라 같은 키가 다르게 동작하지만,
+  // 여기서는 도구를 고르는 단축키로 옮겨 놓았어요.
+  var CHEMDRAW = {
+    // 원자 — 원소 기호 글자 그대로 (ChemDraw 는 원자 위에서 누르지만 여기서는 도구 선택)
+    "C-button": "C", "N-button": "N", "O-button": "O", "S-button": "S", "P-button": "P",
+    "F-button": "F", "Cl-button": "L", "Br-button": "B", "I-button": "I",
+    // 결합 — ChemDraw 의 결합 단축키
+    "bond-single": "X", "bond-double": "2", "bond-triple": "3",
+    "bond-up": "W", "bond-down": "H", "bond-updown": "Y",
+    // 도구
+    "@select-current": "Space", "text": "T", "reaction-arrow-open-angle": "E", "template-0": "J"
+  };
+  function readDefaults() {
+    defaults = Object.assign({}, DROP_DEF);
+    Object.keys(ACT).forEach(function (id) {
+      var b = findBtn(id); if (!b) return;
+      var m = (b.getAttribute("title") || "").match(/\(([^)]+)\)\s*$/);
+      if (m) defaults[id] = m[1].replace("Del", "Del").replace("Equal", "=").replace("Minus", "-");
+    });
+  }
+  function findBtn(id) {
+    return Array.prototype.find.call(document.querySelectorAll('#root [data-testid="' + id.replace(/"/g, '\\"') + '"]'), function (e) { return e.getBoundingClientRect().width > 0; }) || null;
+  }
+  function openDrop(group) {
+    var g = Array.prototype.find.call(document.querySelectorAll('#root [data-testid="' + group + '-drop-down-button"]'), function (e) { return e.getBoundingClientRect().width > 0; });
+    if (!g) return false;
+    var ex = g.querySelector('[data-testid="dropdown-expand"]') || g;
+    ["pointerdown", "mousedown", "pointerup", "mouseup", "click"].forEach(function (t) { ex.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window })); });
+    return true;
+  }
+  function run(id) {
+    var a = ACT[id]; if (!a) return;
+    if (id[0] === "@") {
+      if (id === "@copy-smiles") { var b1 = document.querySelector('[data-copy="cSmiles"]'); if (cur) b1.click(); else toast("먼저 구조를 그려주세요"); }
+      else if (id === "@copy-hrms") { var b2 = document.querySelector('[data-copy="cHrms"]'); if (cur) b2.click(); else toast("먼저 구조를 그려주세요"); }
+      else if (id === "@save-list") $("saveBtn").click();
+      else if (id === "@focus-pka") { if (cur) $("inPka").focus(); }
+      else if (id === "@select-current") selectCurrent();
+      return;
+    }
+    var btn = findBtn(id);
+    if (btn) { btn.click(); return; }
+    if (a.drop && openDrop(a.drop)) {
+      var tries = 0;
+      (function look() {
+        var it = findBtn(id);
+        if (it) { it.click(); document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); return; }
+        if (tries++ < 10) setTimeout(look, 40); else toast(a.label + " 도구를 찾지 못했어요");
+      })();
+      return;
+    }
+    toast(a.label + " 도구는 지금 화면에 없어요");
+  }
+  function typing(t) {
+    if (!t) return false;
+    if (t.classList && t.classList.contains("cliparea")) return false; // 편집기가 몰래 쓰는 숨은 입력칸
+    var tag = t.tagName; if (tag === "TEXTAREA" || tag === "SELECT" || t.isContentEditable) return true;
+    if (tag === "INPUT" && !/^(checkbox|radio|button|range|color|file)$/i.test(t.type)) return true;
+    return false;
+  }
+  var recording = null;
+  window.addEventListener("keydown", function (e) {
+    if (recording) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (e.code === "Escape") { recording = null; renderHk(); return; }
+      if (/^(Control|Shift|Alt|Meta)(Left|Right)$/.test(e.code)) return; // 조합키만 누른 상태
+      var c = comboOf(e); if (!c) { toast("이 키는 쓸 수 없어요"); return; }
+      // 같은 키를 쓰던 다른 기능은 비우기
+      Object.keys(hk).forEach(function (k) { if (hk[k] === c && k !== recording) { delete hk[k]; toast((ACT[k] ? ACT[k].label : k) + "에서 " + c + "를 옮겨왔어요"); } });
+      hk[recording] = c; saveHk(); recording = null; renderHk(); return;
+    }
+    if (!$("hkModal").hidden) return;
+    if (typing(e.target)) return;
+    var combo = comboOf(e), id = findAct(combo);
+    if (!id) return;
+    // ChemDraw 처럼 — 마우스가 원자 위면 그 원자를, 결합 위면 그 결합을 바로 바꿉니다
+    var atomKey = /^([A-Z][a-z]?)-button$/.exec(id);
+    var bondKey = { "bond-single": 1, "bond-double": 2, "bond-triple": 3 }[id];
+    if (atomKey || bondKey) {
+      var hov = hovered();
+      if (hov && hov.map === "atoms" && atomKey) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        applyAt("atom", { label: atomKey[1] }); return;
+      }
+      if (hov && hov.map === "bonds") {
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (bondKey) applyAt("bond", { type: bondKey, stereo: 0 });   // 결합 위 숫자 = 결합 차수
+        return;                                                     // 결합 위 글자 = 아무것도 안 함
+      }
+    }
+    e.preventDefault(); e.stopImmediatePropagation();
+    run(id);                                                        // 빈 곳이면 도구 바꾸기
+  }, true);
+
+  // ---------- 마우스 아래 원자·결합 ----------
+  var lastMouse = null;
+  document.addEventListener("mousemove", function (e) { lastMouse = { clientX: e.clientX, clientY: e.clientY }; }, true);
+  function hovered() {
+    if (!K || !lastMouse) return null;
+    try {
+      var ca = K.editor.render.clientArea.getBoundingClientRect();
+      if (lastMouse.clientX < ca.left || lastMouse.clientX > ca.right || lastMouse.clientY < ca.top || lastMouse.clientY > ca.bottom) return null;
+      var it = K.editor.findItem(lastMouse, ["atoms", "bonds"]);
+      return it && (it.map === "atoms" || it.map === "bonds") ? it : null;
+    } catch (x) { return null; }
+  }
+  // 편집기의 원자·결합 도구를 잠깐 빌려 그 자리에 한 번 찍고 원래 도구로 돌아옵니다.
+  // 편집기 자체 동작을 그대로 쓰는 거라 Ctrl+Z 로 되돌릴 수 있어요.
+  function applyAt(tool, opts) {
+    var ed = K.editor, prev = ed._tool;
+    var ev = { clientX: lastMouse.clientX, clientY: lastMouse.clientY, pageX: lastMouse.clientX, pageY: lastMouse.clientY,
+      button: 0, buttons: 1, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false,
+      preventDefault: function () {}, stopPropagation: function () {}, target: ed.render.clientArea };
+    try {
+      // 선택된 게 있으면 편집기가 그 전부에 적용해 버려서, 마우스 아래 하나만 바뀌도록 선택을 먼저 풉니다
+      try { ed.selection(null); } catch (x) {}
+      var t = ed.tool(tool, opts);
+      if (t && t.mousedown) t.mousedown(ev);
+      ev.buttons = 0;
+      if (t && t.mouseup) t.mouseup(ev);
+    } catch (x) {}
+    ed._tool = prev;
+    try { if (!prev || !prev.atomProps) ed.hoverIcon.hide(true); } catch (x) {}
+  }
+
+  // ---------- 그리던 구조 선택 (스페이스바) ----------
+  // 원자·결합이 새로 생기거나 바뀔 때마다 마지막으로 손댄 원자를 기억해 둡니다.
+  var snapA = {}, snapB = {}, lastEdit = null;
+  function trackEdits() {
+    if (!K) return;
+    var st = K.editor.struct(), na = {}, nb = {};
+    st.atoms.forEach(function (a, id) {
+      var k = a.label + "|" + (a.charge || 0) + "|" + a.pp.x.toFixed(3) + "," + a.pp.y.toFixed(3);
+      na[id] = k; if (snapA[id] !== k) lastEdit = id;
+    });
+    st.bonds.forEach(function (b, id) {
+      var k = b.begin + "-" + b.end + "|" + b.type + "|" + (b.stereo || 0);
+      nb[id] = k; if (snapB[id] !== k) lastEdit = b.end;
+    });
+    if (lastEdit != null && !st.atoms.has(lastEdit)) lastEdit = null;
+    snapA = na; snapB = nb;
+  }
+  function selectCurrent() {
+    if (!K) return;
+    var st = K.editor.struct(), start = lastEdit;
+    if (start == null || !st.atoms.has(start)) {                     // 아직 손댄 게 없으면 마우스 아래 구조
+      var h = hovered();
+      if (h && h.map === "atoms") start = h.id;
+      else if (h && h.map === "bonds") { var hb = st.bonds.get(h.id); start = hb && hb.begin; }
+    }
+    if (start == null || !st.atoms.has(start)) { toast(T("먼저 구조를 그려주세요")); return; }
+    var adj = {};
+    st.bonds.forEach(function (b, id) {
+      (adj[b.begin] = adj[b.begin] || []).push([b.end, id]);
+      (adj[b.end] = adj[b.end] || []).push([b.begin, id]);
+    });
+    var seen = {}, atoms = [], bonds = [], q = [start]; seen[start] = 1;
+    while (q.length) {
+      var u = q.shift(); atoms.push(u);
+      (adj[u] || []).forEach(function (nb) {
+        if (bonds.indexOf(nb[1]) < 0) bonds.push(nb[1]);
+        if (!seen[nb[0]]) { seen[nb[0]] = 1; q.push(nb[0]); }
+      });
+    }
+    run("select-rectangle");                                       // 선택한 걸 바로 끌어 옮길 수 있게
+    setTimeout(function () { try { K.editor.selection({ atoms: atoms, bonds: bonds }); } catch (x) {} }, 40);
+  }
+  function keyOfAct(id) { return hk[id] !== undefined ? hk[id] : (CHEMDRAW[id] || ""); }   // 내 설정이 없으면 ChemDraw 기본값
+  function findAct(combo) {
+    if (!combo) return null;
+    var f = null, lc = combo.toLowerCase();
+    Object.keys(hk).forEach(function (k) { if (hk[k] && hk[k].toLowerCase() === lc) f = k; });
+    if (f) return f;
+    Object.keys(CHEMDRAW).forEach(function (k) {
+      if (hk[k] !== undefined) return;                       // 사용자가 다시 지정했으면 건너뜀
+      if (CHEMDRAW[k].toLowerCase() === lc) f = k;
+    });
+    return f;
+  }
+  function conflictWith(combo, self) {
+    var hit = null;
+    Object.keys(defaults).forEach(function (k) { if (k !== self && defaults[k] && defaults[k].replace(/\s/g, "").toLowerCase() === combo.toLowerCase()) hit = k; });
+    return hit;
+  }
+  function renderHk() {
+    var q = $("hkSearch").value.trim().toLowerCase();
+    $("hkBody").innerHTML = ACTIONS.map(function (g) {
+      var rows = g[1].filter(function (a) { return !q || a[1].toLowerCase().indexOf(q) >= 0 || g[0].indexOf(q) >= 0 || (keyOfAct(a[0]) || "").toLowerCase().indexOf(q) >= 0; });
+      if (!rows.length) return "";
+      return '<div class="hk-group">' + esc(g[0]) + "</div>" + rows.map(function (a) {
+        var id = a[0], mine = hk[id], cd = CHEMDRAW[id], def = defaults[id], rec = recording === id;
+        var shown = mine !== undefined ? mine : cd;
+        var cf = mine ? conflictWith(mine, id) : null;
+        return '<div class="hk-row"><span class="nm">' + esc(a[1]) + "</span>" +
+          '<span class="hk-def">' + (cd ? 'ChemDraw <kbd class="k">' + esc(cd) + "</kbd>" : def ? '편집기 <kbd class="k">' + esc(def) + "</kbd>" : "") + "</span>" +
+          '<button type="button" class="hk-set' + (rec ? " rec" : shown ? " has" : "") + '" data-rec="' + esc(id) + '">' + (rec ? T("키를 누르세요… (Esc 취소)") : shown ? '<kbd class="k">' + esc(shown) + "</kbd>" : T("단축키 정하기")) + "</button>" +
+          (mine !== undefined ? '<button type="button" class="hk-x" data-clr="' + esc(id) + '" title="지우기" aria-label="' + esc(a[1]) + ' 단축키 지우기">×</button>' : "<span></span>") +
+          (cf ? '<div class="hk-warn">편집기 기본 단축키 "' + esc(ACT[cf].label) + '"와 겹쳐요. 이 설정이 우선해요.</div>' : "") +
+          "</div>";
+      }).join("");
+    }).join("") || '<p class="mc-empty">찾는 기능이 없어요.</p>';
+    if (window.I18N) I18N.apply($("hkModal"));
+    $("hkBody").querySelectorAll("[data-rec]").forEach(function (b) { b.onclick = function () { recording = b.dataset.rec; renderHk(); }; });
+    $("hkBody").querySelectorAll("[data-clr]").forEach(function (b) { b.onclick = function () { if (hk[b.dataset.clr] === "") delete hk[b.dataset.clr]; else hk[b.dataset.clr] = ""; saveHk(); renderHk(); }; });
+  }
+  $("hkBtn").onclick = function () { readDefaults(); recording = null; $("hkSearch").value = ""; renderHk(); $("hkModal").hidden = false; $("hkSearch").focus(); };
+  $("hkClose").onclick = function () { recording = null; $("hkModal").hidden = true; };
+  $("hkModal").addEventListener("click", function (e) { if (e.target === $("hkModal")) { recording = null; $("hkModal").hidden = true; } });
+  $("hkSearch").oninput = renderHk;
+  $("hkCd").onclick = function () { hk = {}; saveHk(); renderHk(); toast(T("ChemDraw 단축키로 맞췄어요")); };
+  $("hkReset").onclick = function () {
+    var b = $("hkReset"); if (!Object.keys(hk).length) return;
+    if (b.dataset.sure) { hk = {}; saveHk(); renderHk(); delete b.dataset.sure; b.textContent = "내 단축키 모두 지우기"; toast("내 단축키를 모두 지웠어요"); }
+    else { b.dataset.sure = "1"; b.textContent = "한 번 더 누르면 모두 지워져요"; setTimeout(function () { delete b.dataset.sure; b.textContent = "내 단축키 모두 지우기"; }, 3000); }
+  };
+
+  // ---------- 언어 ----------
+  function syncLangBtn() { $("langBtn").textContent = I18N.lang === "ko" ? "EN" : "한"; }
+  window.onLangChange = function () {
+    syncLangBtn();
+    if (cur) { show(); }
+    renderList(); renderCount();
+    if (!$("hkModal").hidden) renderHk();
+  };
+  $("langBtn").onclick = function () { I18N.set(I18N.lang === "ko" ? "en" : "ko"); };
+  syncLangBtn();
+  I18N.apply();
+
+  window.__mc = { run: function (id) { run(id); }, pos: function () { return pos; }, hk: function () { return hk; }, lastEdit: function () { return lastEdit; } };
+
+  // =====================================================================
+  // 위험 신호
+  // =====================================================================
+  var rkSel = null, rkOff = {}, rkFor = null;
+  function curAlerts() {
+    if (!cur) return [];
+    if (cur.alerts) return cur.alerts;
+    try { cur.alerts = Chem.alerts(cur.mol, cur.props); } catch (e) { cur.alerts = []; }
+    return cur.alerts;
+  }
+  function updateRisk() {
+    if (!$("riskCnt")) return;                  // 위험 신호는 도구 6(독성)으로
+    var n = cur ? curAlerts().filter(function (a) { return a.sev !== "low"; }).length : 0;
+    $("riskCnt").textContent = cur ? (n ? "(" + n + ")" : "(0)") : "";
+    $("riskCnt").style.color = n >= 4 ? "#ffb4ab" : "";
+    if (cur && rkFor !== cur.smiles) { rkFor = cur.smiles; rkSel = null; }
+    if (document.getElementById("risk").classList.contains("on")) renderRisk();
+  }
+  function renderRisk() {
+    if (!$("rkMain")) return;
+    var has = !!cur;
+    $("rkEmpty").hidden = has; $("rkMain").hidden = !has;
+    if (!has) return;
+    var list = curAlerts(), CATS = Chem.ALERT_CAT;
+    var shown = list.filter(function (a) { return !rkOff[a.cat]; });
+    // 그림 강조
+    var hi = {};
+    (rkSel != null && list[rkSel] ? [list[rkSel]] : shown).forEach(function (a) {
+      a.atoms.forEach(function (i) { (hi[i] = hi[i] || []); if (hi[i].indexOf(CATS[a.cat].color) < 0) hi[i].push(CATS[a.cat].color); });
+    });
+    var svg = null;
+    try { svg = Chem.depict(cur.mol, { highlight: hi, width: 560, height: 400 }); } catch (e) { svg = null; }
+    $("rkPic").innerHTML = svg || '<p class="mc-empty" style="margin:0">이 구조는 그림으로 그릴 수 없어요. 구조 탭에서 다시 그려주세요.</p>';
+    // 범례 (누르면 켜고 끄기)
+    $("rkLegend").innerHTML = Object.keys(CATS).map(function (k) {
+      var n = list.filter(function (a) { return a.cat === k; }).length;
+      return '<button type="button" class="rk-chip" data-cat="' + k + '" aria-pressed="' + (!rkOff[k]) + '" style="color:' + CATS[k].color + '"><i style="background:' + CATS[k].color + '"></i>' + CATS[k].name + " " + n + "</button>";
+    }).join("") + (rkSel != null ? '<button type="button" class="rk-chip" id="rkAll" aria-pressed="true" style="color:var(--mc-accent)">전체 보기</button>' : "");
+    $("rkLegend").querySelectorAll("[data-cat]").forEach(function (b) { b.onclick = function () { rkOff[b.dataset.cat] = !rkOff[b.dataset.cat]; rkSel = null; renderRisk(); }; });
+    if ($("rkAll")) $("rkAll").onclick = function () { rkSel = null; renderRisk(); };
+    // 목록
+    if (!shown.length) {
+      $("rkList").innerHTML = list.length
+        ? '<div class="mc-empty">선택한 분류에 해당하는 경고가 없어요. 위의 분류 단추를 다시 눌러보세요.</div>'
+        : '<div class="rk-none">알려진 구조 경고가 발견되지 않았어요.<div style="font-weight:500;font-size:13px;margin-top:6px;color:var(--mc-muted)">경고가 없다고 대사 안정성이나 안전성이 보장되는 건 아니에요. 이 목록에 없는 경로로도 대사될 수 있어요.</div></div>';
+      return;
+    }
+    var SEVN = { high: "주의", mid: "보통", low: "참고" };
+    var html = "", lastCat = null;
+    shown.forEach(function (a) {
+      var i = list.indexOf(a);
+      if (a.cat !== lastCat) { lastCat = a.cat; html += '<div class="rk-sec"><i style="background:' + CATS[a.cat].color + '"></i>' + CATS[a.cat].name + "</div>"; }
+      html += '<button type="button" class="rk-item" data-i="' + i + '" aria-pressed="' + (rkSel === i) + '" style="--rc:' + CATS[a.cat].color + '">' +
+        '<span class="t"><span class="nm">' + esc(a.name) + '</span><span class="sev ' + a.sev + '">' + SEVN[a.sev] + "</span></span>" +
+        '<span class="why">' + esc(a.why) + "</span>" +
+        '<span class="fix"><b>바꿔볼 방향:</b> ' + esc(a.fix) + "</span>" +
+        (a.atoms.length ? '<span class="why" style="font-size:12px">누르면 구조에서 해당 자리만 표시돼요</span>' : "") +
+        "</button>";
+    });
+    $("rkList").innerHTML = html;
+    $("rkList").querySelectorAll("[data-i]").forEach(function (b) {
+      b.onclick = function () { var i = +b.dataset.i; rkSel = (rkSel === i ? null : i); renderRisk(); };
+    });
+  }
+
+  function initExtras() { applyPos(); $("mvBtn").hidden = false; $("hkBtn").hidden = false; setTimeout(readDefaults, 500); }
+
+  renderCount();
+})();
+</script>
+<script>window.__KETCHER_BASE__ = "../common/ketcher/";</script>
+<script defer src="../common/ketcher/static/js/main.e47c48ad.js"></script>
+</body>
+</html>

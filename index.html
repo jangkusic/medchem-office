@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>의약화학 오피스</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #fff; --fg: #1a1d21; --muted: #6b7280; --line: #e3e6ea;
+  --accent: #1f6f5c; --accent-soft: #e8f3ef; --warn: #b45309;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181c; --card: #1d2126; --fg: #e8eaed; --muted: #9aa3ad; --line: #2c3238;
+    --accent: #5fbfa5; --accent-soft: #1b2f2a; --warn: #d9943a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181c; --card: #1d2126; --fg: #e8eaed; --muted: #9aa3ad; --line: #2c3238;
+  --accent: #5fbfa5; --accent-soft: #1b2f2a; --warn: #d9943a;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); min-height: 100vh;
+  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+}
+.wrap { max-width: 880px; margin: 0 auto; padding: 48px 16px 64px; }
+header { margin-bottom: 28px; }
+h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -.01em; }
+.sub { color: var(--muted); font-size: 14px; margin: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.tool {
+  display: block; text-decoration: none; color: inherit; background: var(--card);
+  border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; position: relative;
+  transition: border-color .12s, transform .12s;
+}
+a.tool:hover { border-color: var(--accent); transform: translateY(-1px); }
+.tool.soon { opacity: .58; cursor: default; }
+.n { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.t { font-size: 16px; font-weight: 700; margin: 3px 0 5px; }
+.d { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.tag {
+  position: absolute; top: 14px; right: 14px; font-size: 10px; padding: 2px 7px;
+  border-radius: 20px; background: var(--accent-soft); color: var(--accent); font-weight: 700;
+}
+.tool.soon .tag { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.note {
+  margin-top: 28px; padding: 14px 16px; border: 1px dashed var(--line);
+  border-radius: 10px; font-size: 13px; color: var(--muted); line-height: 1.65;
+}
+.note b { color: var(--fg); font-weight: 600; }
+.cnt { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>의약화학 오피스<span id="hubLang"></span></h1>
+    <p class="sub">여섯 도구가 같은 화합물 목록을 함께 씁니다. 한 곳에서 저장하면 나머지에서 바로 읽혀요.</p>
+  </header>
+
+  <div class="grid">
+    <a class="tool" href="01-draw/index.html">
+      <span class="tag">쓸 수 있어요</span>
+      <div class="n">01</div><div class="t">구조 그리기 · 물성</div>
+      <div class="d">구조를 그리고 분자량·cLogP·TPSA·pKa·CNS MPO를 봅니다. 입체화학과 3D 보기, 화합물 목록 저장도 여기서요.</div>
+    </a>
+    <div class="tool soon">
+      <span class="tag">준비 중</span>
+      <div class="n">02</div><div class="t">NMR</div>
+      <div class="d">FID·JCAMP 읽기, 위상·베이스라인·적분, 다중도 해석과 논문용 문구 만들기.</div>
+    </div>
+    <div class="tool soon">
+      <span class="tag">준비 중</span>
+      <div class="n">03</div><div class="t">도킹 · MD</div>
+      <div class="d">리간드 준비와 그리드 박스 설정, 결과 포즈와 궤적 보기. 계산은 Vina·GROMACS에서.</div>
+    </div>
+    <div class="tool soon">
+      <span class="tag">준비 중</span>
+      <div class="n">04</div><div class="t">SAR</div>
+      <div class="d">R기 분해표, Matched Molecular Pair, activity cliff, 치환기별 기여도.</div>
+    </div>
+    <div class="tool soon">
+      <span class="tag">준비 중</span>
+      <div class="n">05</div><div class="t">물성 (SPR)</div>
+      <div class="d">계산값과 실측값 비교, 용해도·투과도·안정성 기록, 활성-물성 산점도.</div>
+    </div>
+    <div class="tool soon">
+      <span class="tag">준비 중</span>
+      <div class="n">06</div><div class="t">독성 (STR)</div>
+      <div class="d">구조 경고와 hERG·CYP·AMES 실측값 기록, 구조 변화에 따른 독성 추이.</div>
+    </div>
+  </div>
+
+  <div class="note" id="note">
+    <b>폴더를 통째로 옮기세요.</b> <code>공통</code> 폴더에 화학 엔진과 화합물 목록이 들어 있어서,
+    도구 폴더만 따로 떼면 열리지 않아요.<br>
+    인터넷에 아무것도 보내지 않습니다. 구조와 데이터는 이 PC 안에만 있어요.
+  </div>
+</div>
+
+<script>
+// 저장된 화합물 수를 보여줘요 (목록은 도구들과 같은 곳에 있습니다)
+(function () {
+  var n = 0;
+  try { var v = JSON.parse(localStorage.getItem("medchem-office-compounds-v1") || "[]"); n = Array.isArray(v) ? v.length : 0; } catch (e) {}
+  if (!n) return;
+  var d = document.createElement("div");
+  d.style.cssText = "margin-top:14px;font-size:13px;color:var(--muted)";
+  d.innerHTML = '지금 목록에 화합물 <span class="cnt">' + n + "</span>개가 저장돼 있어요.";
+  document.getElementById("note").parentNode.insertBefore(d, document.getElementById("note"));
+})();
+</script>
+</body>
+</html>

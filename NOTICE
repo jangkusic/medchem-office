@@ -1,0 +1,88 @@
+MedChem Office
+Copyright 2026 MedChem Office contributors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+================================================================================
+This product bundles or derives from the following third-party software.
+================================================================================
+
+--------------------------------------------------------------------------------
+Ketcher
+--------------------------------------------------------------------------------
+Copyright EPAM Systems, Inc.
+Licensed under the Apache License, Version 2.0
+https://github.com/epam/ketcher
+
+The Ketcher standalone build is bundled, unmodified except as noted, under:
+    common/ketcher/
+
+MODIFICATION NOTICE (Apache License 2.0, section 4(b)):
+    common/ketcher/static/js/main.e47c48ad.js has been modified by the
+    MedChem Office contributors. One change was made: the webpack public
+    path, originally the literal "./", now reads an optional global
+    (window.__KETCHER_BASE__) so that the bundle can be served from a
+    shared folder rather than from the directory of each page that uses it.
+    No other change was made to this or any other bundled Ketcher file.
+
+Third-party libraries bundled inside the Ketcher build carry their own
+licenses, reproduced in the *.LICENSE.txt files that accompany the bundle
+under common/ketcher/static/js/.
+
+--------------------------------------------------------------------------------
+RDKit
+--------------------------------------------------------------------------------
+Copyright (c) 2006-2024 Rational Discovery LLC, Greg Landrum, and others
+Licensed under the BSD 3-Clause License
+https://github.com/rdkit/rdkit
+
+Portions of common/chem.js are independent JavaScript implementations written
+with reference to RDKit's C++ and Python sources, specifically:
+  - the Ertl topological polar surface area (TPSA) contribution table and
+    algorithm, following RDKit's Code/GraphMol/Descriptors/MolSurf.cpp
+  - the Wildman-Crippen logP and molar refractivity atom-type definitions,
+    following RDKit's Crippen parameter tables
+  - the hydrogen-bond donor/acceptor and rotatable-bond SMARTS definitions
+    used by RDKit's Lipinski module
+
+No RDKit source code is copied verbatim. These implementations were validated
+against RDKit's own regression data.
+
+BSD 3-Clause License text:
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+  * Neither the name of the copyright holder nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------------------------------------
+Scientific references implemented in this software
+--------------------------------------------------------------------------------
+Wildman, S.A.; Crippen, G.M. "Prediction of Physicochemical Parameters by
+  Atomic Contributions." J. Chem. Inf. Comput. Sci. 1999, 39, 868-873.
+Ertl, P.; Rohde, B.; Selzer, P. "Fast Calculation of Molecular Polar Surface
+  Area." J. Med. Chem. 2000, 43, 3714-3717.
+Lipinski, C.A. et al. Adv. Drug Deliv. Rev. 1997, 23, 3-25.
+Veber, D.F. et al. "Molecular Properties That Influence the Oral
+  Bioavailability of Drug Candidates." J. Med. Chem. 2002, 45, 2615-2623.
+Wager, T.T. et al. "Moving beyond Rules: CNS MPO." ACS Chem. Neurosci.
+  2010, 1, 435-449.
