@@ -6,7 +6,9 @@ no upload, no internet. Your structures never leave your computer.
 의약화학자를 위한 오프라인 도구 모음입니다. 모든 계산이 브라우저 안에서 돌아가고,
 구조와 데이터는 이 PC 밖으로 나가지 않습니다.
 
-**[Open it →](https://USERNAME.github.io/medchem-office/)**  ·  [Download for offline use](../../releases)
+**[Open it →](https://jangkusic.github.io/medchem-office/)**  ·  [Download for offline use](../../releases)
+
+![Draw a structure and the properties, drug-likeness and CNS MPO appear beside it](docs/images/draw.png)
 
 ---
 
@@ -38,6 +40,14 @@ structure editor is bundled, so the page works with the network cable unplugged.
 | **Formats** | Read SMILES / MOL / CDXML · Write ChemDraw (.cdxml), MOL, SDF, CSV |
 
 Korean and English, switchable from the top right. Shortcuts match ChemDraw.
+
+**Every stereoisomer, drawn and labelled.** The one on the canvas is outlined; send any other to the editor in one click.
+
+![All four stereoisomers of sertraline with their R/S labels](docs/images/isomers.png)
+
+**Real 3D coordinates** for the fragment you select — rings pucker, aromatics stay flat, wedges are respected.
+
+![Sertraline in 3D, ball and stick](docs/images/3d.png)
 
 ### Shortcuts
 

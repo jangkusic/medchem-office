@@ -532,7 +532,6 @@ table.mc-t { border-collapse: collapse; width: 100%; font-variant-numeric: tabul
       ruleRow("TPSA", "Å² · Veber", p.tpsa, 140, 1) +
       ruleRow("회전 결합", "Veber", p.rotb, 10, 0);
     renderMpo(); updateRisk(); renderStereo();
-    if (window.I18N) I18N.apply($("propsBox"));
     $("pMore").innerHTML =
       "<span>HBD / HBA</span><b>" + p.hbd + " / " + p.hba + "</b>" +
       "<span>몰 굴절률 (MR)</span><b>" + f(p.mr, 2) + "</b>" +
@@ -541,6 +540,7 @@ table.mc-t { border-collapse: collapse; width: 100%; font-variant-numeric: tabul
       "<span>Fsp3</span><b>" + f(p.fsp3, 2) + "</b>" +
       "<span>헤테로 원자</span><b>" + p.hetero + "</b>" +
       (p.charge ? "<span>전하</span><b>" + (p.charge > 0 ? "+" : "") + p.charge + "</b>" : "");
+    if (window.I18N) I18N.apply();                // 오른쪽 패널을 다 그린 뒤에 번역
     $("cSmiles").textContent = cur.smiles;
     var mh = addH(p.formula);
     $("cHrms").textContent = "HRMS (ESI) m/z: [M+H]+ calcd for " + mh + " " + f(p.exact + H, 4) + "; found ";
@@ -698,7 +698,7 @@ table.mc-t { border-collapse: collapse; width: 100%; font-variant-numeric: tabul
         .then(function () {
           if (!d.isConnected) return;
           var sub = d.querySelector("#isoSub");
-          if (sub) sub.textContent = rows.length + (v.shown < v.total ? " / " + v.total : "");
+          if (sub) sub.textContent = rows.length + (v.shown < v.total ? " / " + v.total : "") + " " + T("가능한 입체이성질체");
           grid.innerHTML = rows.map(function (r, i) {
             return '<figure class="iso' + (r.cur ? " now" : "") + '" data-smi="' + esc(r.smi) + '">' +
               '<div class="pic" data-pic="' + esc(r.smi) + '"></div>' +

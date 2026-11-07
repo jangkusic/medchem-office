@@ -296,6 +296,14 @@
     "독성 (STR)": "Toxicity (STR)",
     "구조 경고와 hERG·CYP·AMES 실측값 기록, 구조 변화에 따른 독성 추이.":
       "Structural alerts, measured hERG, CYP and Ames data, and how toxicity tracks with structure.",
+
+    // ---- CNS MPO 설명 ----
+    "pKa·cLogD는 작용기별 기준값에 주변 원자의 전자 끄는 효과를 더한 경험 규칙 계산이에요.":
+      "pKa and cLogD are rule-based estimates: a base value for each functional group plus through-bond electron-withdrawing corrections.",
+    "아는 약 27개로 맞춰봤을 때 평균 0.4 정도 차이가 났지만, 고리가 여럿 붙은 방향족 질소(예: 카페인)나 입체적으로 꼬인 아민은 2 이상 벌어질 수 있어요. 실험값이나 ACD·MarvinSketch 값이 있으면 아래에 넣어주세요.":
+      "Across 27 known drugs the mean error was about 0.4, but fused aromatic nitrogens (e.g. caffeine) and strained amines can be off by 2 or more. If you have measured or ACD/MarvinSketch values, enter them below.",
+    "cLogP는 이 프로그램의 Crippen 값이라 원 논문(BioByte ClogP)과 조금 다를 수 있어요. 4점 이상이 CNS 약물에 유리해요.":
+      "cLogP here is the Wildman–Crippen value, which can differ slightly from the BioByte ClogP used in the original paper. A score of 4 or more favours CNS drugs.",
     // ---- 메시지 ----
     "먼저 구조를 그려주세요": "Draw a structure first",
     "이 구조를 읽지 못했어요. 다시 그려주세요.": "Could not read this structure. Please redraw it.",
@@ -381,6 +389,8 @@
         from = i + EN[k].length;
       }
     });
+    // "1개", "3 개" 처럼 숫자 뒤에 붙은 '개' 는 영어에서 필요 없어요
+    out = out.replace(/(\d)\s*개(?![가-힣])/g, "$1");
     return out;
   }
 
